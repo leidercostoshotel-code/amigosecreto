@@ -6,10 +6,14 @@ App de amigo secreto con **dos roles**:
   - **🎲 Sorteo:** arma la lista, sortea y comparte el enlace.
   - **👥 Integrantes:** lista de personas guardadas (agregar / editar / eliminar). Aparecen como **buscador predictivo** al armar un sorteo.
   - **📜 Historial:** cada sorteo queda guardado; permite **registrar un sorteo viejo hecho a mano** y verlos todos.
-- **Jugador** (`index.html`): abre el enlace, toca su nombre, crea un **PIN** la primera vez y descubre a quién le regala. Su resultado queda protegido con su PIN para que nadie más lo vea dentro de la app.
+- **Jugador** (`index.html`): dos pestañas:
+  - **🎁 Mi amigo secreto:** toca tu nombre, crea un **PIN** la primera vez y descubre a quién le regalas (verás también la lista de deseos de esa persona). Tu resultado queda protegido con tu PIN.
+  - **📝 Listas de deseos:** tablero con todas las personas; toca una para ver los regalos que pidió. Cada quien edita la suya con su PIN (desde el revelado).
 
 Funciones clave:
+- **Lista de deseos:** cada persona anota los regalos que quiere; quien le regala los ve al revelar, y todos pueden consultarlas en el tablero (el sorteo sigue secreto).
 - **No repetir años anteriores:** al sortear, evita que a alguien le toque la misma persona de un sorteo pasado (con relajación automática si fuera imposible).
+- **Una sola cadena:** el sorteo nunca arma parejas recíprocas (A↔B) ni grupitos.
 - **Yo también juego:** oculta las asignaciones al organizador para que también pueda participar y revelar lo suyo con su PIN.
 
 Todo se guarda en **Firestore**, así que funciona entre dispositivos: el admin sortea desde su teléfono y cada persona entra desde el suyo.
@@ -64,7 +68,8 @@ Esto sube las reglas de seguridad y publica el sitio. Verás una URL tipo
 > ⚠️ Si administras las reglas **a mano desde la consola** (Firestore → Reglas),
 > recuerda **volver a publicar** el contenido de `firestore.rules` cada vez que
 > cambie. Esta versión agrega permisos para la lista de integrantes
-> (`admins/{uid}/people`): sin republicar, los integrantes no se guardarán.
+> (`admins/{uid}/people`) y para que cada jugador edite su **lista de deseos**
+> (campo `wishlist`): sin republicar, los integrantes y las listas no se guardan.
 
 > ¿Solo quieres probar local? `firebase serve` o cualquier servidor estático
 > (`python3 -m http.server`). **No** abras los archivos con `file://`: los

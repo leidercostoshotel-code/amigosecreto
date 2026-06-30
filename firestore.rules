@@ -49,9 +49,10 @@ service cloud.firestore {
         // Crear y borrar jugadores: solo el admin.
         allow create, delete: if isGameAdmin(gameId);
 
-        // Actualizar: el admin puede todo. Un jugador autenticado solo puede
-        // reclamar su nombre UNA vez (fijar pinHash/pinSalt) y marcarse visto,
-        // sin tocar su nombre, su receptor ni su orden.
+        // Actualizar: el admin puede todo. Un jugador autenticado solo puede:
+        //  (a) reclamar su nombre UNA vez (fijar pinHash/pinSalt) y marcarse visto, o
+        //  (b) editar su lista de deseos (solo el campo 'wishlist').
+        // En ambos casos sin tocar su nombre, su receptor ni su orden.
         allow update: if isGameAdmin(gameId) || (
           signedIn()
           && request.resource.data.name == resource.data.name
@@ -61,6 +62,9 @@ service cloud.firestore {
                .hasOnly(['pinHash', 'pinSalt', 'revealed'])
           && resource.data.pinHash == null
           && request.resource.data.revealed == true
+        ) || (
+          signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wishlist'])
         );
       }
     }

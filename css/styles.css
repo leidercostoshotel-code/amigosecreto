@@ -253,6 +253,21 @@ body {
 .modal__title { text-align: center; margin-bottom: 6px; font-size: 1.25rem; }
 .modal__note { text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 18px; line-height: 1.5; }
 
+/* Listas de deseos */
+.deseos { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.deseos__empty { color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 18px 12px; border: 2px dashed var(--surface-line); border-radius: var(--radius-md); }
+.deseo { display: flex; align-items: flex-start; gap: 10px; background: var(--surface-soft); border: 1px solid var(--surface-line); border-left: 4px solid var(--primary); border-radius: var(--radius-md); padding: 12px 14px; text-align: left; animation: fadeUp 0.25s ease both; }
+.deseo__icon { flex: none; font-size: 1.1rem; line-height: 1.4; }
+.deseo__text { flex: 1; font-size: 0.98rem; color: var(--text); word-break: break-word; line-height: 1.4; }
+.deseo__remove { flex: none; width: 30px; height: 30px; border: none; border-radius: 8px; background: transparent; color: var(--text-muted); font-size: 1.1rem; line-height: 1; cursor: pointer; transition: background 0.2s, color 0.2s; }
+.deseo__remove:hover { background: rgba(239, 68, 68, 0.12); color: var(--danger-strong); }
+
+.wishbox { text-align: left; margin: 6px 0 18px; }
+.wishbox__title { font-size: 0.85rem; font-weight: 700; color: var(--text-soft); margin-bottom: 10px; }
+
+.wish-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.wish-head__avatar { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 700; flex: none; }
+
 /* PIN inputs */
 .pin-input { letter-spacing: 0.5em; text-align: center; font-size: 1.4rem; font-weight: 700; }
 .pin-field { margin-bottom: 14px; }
