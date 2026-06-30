@@ -83,6 +83,34 @@ body {
 /* Sections / steps */
 .step { display: none; animation: fadeUp 0.4s ease both; }
 .step.is-active { display: block; }
+.screen { display: none; }
+.screen.is-active { display: block; animation: fadeUp 0.4s ease both; }
+.view { animation: fadeUp 0.3s ease both; }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; padding: 8px clamp(12px, 4vw, 20px) 0; background: var(--surface); border-bottom: 1px solid var(--surface-line); }
+.tab { flex: 1; background: none; border: none; font-family: inherit; font-size: 0.92rem; font-weight: 600; color: var(--text-muted); padding: 14px 8px; cursor: pointer; border-bottom: 3px solid transparent; transition: color 0.2s, border-color 0.2s; border-radius: 8px 8px 0 0; }
+.tab:hover { color: var(--text-soft); background: var(--surface-soft); }
+.tab.is-active { color: var(--primary-strong); border-bottom-color: var(--primary-strong); }
+.tab:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* Listas con casillas (selección de integrantes) */
+.check-list { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; }
+.check-list label { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface-soft); border: 1px solid var(--surface-line); border-radius: var(--radius-md); cursor: pointer; font-weight: 600; }
+.check-list input { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+
+/* Filas del historial */
+.history-item { display: flex; align-items: center; gap: 12px; background: var(--surface-soft); border: 1px solid var(--surface-line); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 8px; }
+.history-item__info { flex: 1; min-width: 0; }
+.history-item__title { font-weight: 700; word-break: break-word; }
+.history-item__meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+.history-item__kind { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent-strong); }
+
+/* Selects de pares (registro manual) */
+.pair-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.pair-row__from { flex: none; min-width: 110px; font-weight: 700; word-break: break-word; }
+.pair-row__arrow { color: var(--accent-strong); flex: none; }
+.pair-row select { flex: 1; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 .section-title { font-size: 1rem; color: var(--text); margin-bottom: 14px; }

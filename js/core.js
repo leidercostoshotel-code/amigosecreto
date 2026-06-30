@@ -69,6 +69,55 @@ export function buildAssignments(players) {
     return out;
 }
 
+// Derangement con EXCLUSIONES (p. ej. no repetir el regalo del año pasado).
+// participants: [{ id, name }]
+// forbidden: { giverId: [receiverId, ...] }  (no incluye al propio; se agrega aquí)
+// Devuelve [{ giverId, giver, receiverId, receiver }] o null si es imposible.
+export function assignWithExclusions(participants, forbidden) {
+    const n = participants.length;
+    if (n < 2) return null;
+    const nameById = {};
+    const forb = {};
+    participants.forEach((p) => {
+        nameById[p.id] = p.name;
+        forb[p.id] = new Set(forbidden && forbidden[p.id] ? forbidden[p.id] : []);
+        forb[p.id].add(p.id); // nadie se regala a sí mismo
+    });
+    const allIds = participants.map((p) => p.id);
+
+    // Varios intentos con orden aleatorio para repartir variedad; el backtracking
+    // garantiza que, si existe solución, la encuentre (o devuelva null si no).
+    for (let attempt = 0; attempt < 60; attempt++) {
+        const giverOrder = shuffle(participants).map((p) => p.id);
+        const used = new Set();
+        const result = {};
+
+        const solve = (i) => {
+            if (i === giverOrder.length) return true;
+            const giver = giverOrder[i];
+            const candidates = shuffle(allIds).filter((r) => !used.has(r) && !forb[giver].has(r));
+            for (const r of candidates) {
+                result[giver] = r;
+                used.add(r);
+                if (solve(i + 1)) return true;
+                used.delete(r);
+                delete result[giver];
+            }
+            return false;
+        };
+
+        if (solve(0)) {
+            return participants.map((p) => ({
+                giverId: p.id,
+                giver: p.name,
+                receiverId: result[p.id],
+                receiver: nameById[result[p.id]]
+            }));
+        }
+    }
+    return null;
+}
+
 // --- Validación de nombres ---
 export function normalizeName(raw) {
     return String(raw == null ? "" : raw).replace(/\s+/g, " ").trim();
