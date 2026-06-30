@@ -3,749 +3,892 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1e1b4b">
+    <meta name="description" content="Organiza tu amigo secreto de forma fácil, privada y divertida. Sin registros, todo desde tu dispositivo.">
     <title>Amigo Secreto 🎁</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg-1: #1e1b4b;
+            --bg-2: #312e81;
+            --bg-3: #4c1d95;
+            --primary: #6366f1;
+            --primary-strong: #4f46e5;
+            --accent: #f59e0b;
+            --accent-strong: #d97706;
+            --danger: #ef4444;
+            --danger-strong: #dc2626;
+            --surface: #ffffff;
+            --surface-soft: #f5f5fb;
+            --surface-line: #e6e6f0;
+            --text: #1f2433;
+            --text-soft: #5b6072;
+            --text-muted: #8a8fa3;
+            --radius-lg: 24px;
+            --radius-md: 14px;
+            --radius-sm: 10px;
+            --shadow-card: 0 24px 60px -20px rgba(30, 27, 75, 0.55);
+            --shadow-soft: 0 6px 20px -8px rgba(30, 27, 75, 0.35);
+            --ring: 0 0 0 4px rgba(99, 102, 241, 0.28);
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body { height: 100%; }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            font-family: var(--font);
+            color: var(--text);
+            background:
+                radial-gradient(1200px 600px at 15% -10%, rgba(245, 158, 11, 0.18), transparent 60%),
+                radial-gradient(1000px 700px at 110% 10%, rgba(99, 102, 241, 0.25), transparent 55%),
+                linear-gradient(155deg, var(--bg-1) 0%, var(--bg-2) 45%, var(--bg-3) 100%);
+            min-height: 100dvh;
             display: flex;
             justify-content: center;
-            align-items: center;
-            overflow: hidden;
+            align-items: flex-start;
+            padding: clamp(16px, 4vw, 48px) 16px;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
         }
 
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 500px;
-            width: 90%;
-            text-align: center;
+        .app {
+            background: var(--surface);
+            width: 100%;
+            max-width: 540px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            overflow: hidden;
             position: relative;
             z-index: 10;
         }
 
-        h1 {
-            color: #667eea;
-            margin-bottom: 30px;
-            font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        .app__header {
+            text-align: center;
+            padding: 36px 28px 24px;
+            background: linear-gradient(135deg, var(--primary-strong), var(--bg-3));
+            color: #fff;
         }
 
-        .input-group {
-            margin-bottom: 20px;
+        .app__badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.16);
+            backdrop-filter: blur(4px);
+            margin-bottom: 14px;
         }
 
-        input {
+        .app__title {
+            font-size: clamp(1.7rem, 6vw, 2.3rem);
+            font-weight: 800;
+            letter-spacing: -0.01em;
+        }
+
+        .app__subtitle {
+            margin-top: 8px;
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.82);
+        }
+
+        .app__body { padding: clamp(20px, 5vw, 32px); }
+
+        .step { display: none; animation: fadeUp 0.4s ease both; }
+        .step.is-active { display: block; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .field-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-soft);
+            margin-bottom: 8px;
+        }
+
+        .add-row { display: flex; gap: 10px; }
+
+        .input {
+            flex: 1;
             width: 100%;
-            padding: 15px;
-            font-size: 16px;
-            border: 2px solid #667eea;
-            border-radius: 10px;
-            transition: all 0.3s;
+            padding: 14px 16px;
+            font-size: 1rem;
+            font-family: inherit;
+            color: var(--text);
+            border: 2px solid var(--surface-line);
+            border-radius: var(--radius-md);
+            background: var(--surface-soft);
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
         }
 
-        input:focus {
+        .input:focus {
             outline: none;
-            border-color: #764ba2;
-            box-shadow: 0 0 15px rgba(118, 75, 162, 0.3);
+            border-color: var(--primary);
+            background: #fff;
+            box-shadow: var(--ring);
         }
 
-        button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        select.input { cursor: pointer; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%235b6072' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 14px center; padding-right: 44px;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600;
             border: none;
-            padding: 15px 40px;
-            font-size: 18px;
-            border-radius: 50px;
+            border-radius: var(--radius-md);
+            padding: 14px 22px;
             cursor: pointer;
-            transition: all 0.3s;
-            margin: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-        }
-
-        .participants-list {
-            text-align: left;
-            margin: 20px 0;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .participant-item {
-            background: #f0f0f0;
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
+            transition: transform 0.12s ease, box-shadow 0.2s, background 0.2s, opacity 0.2s;
+            display: inline-flex;
             align-items: center;
-        }
-
-        .remove-btn {
-            background: #ff4757;
-            padding: 5px 15px;
-            font-size: 14px;
-        }
-
-        .select-section {
-            margin: 30px 0;
-        }
-
-        .select-section select {
-            width: 100%;
-            padding: 15px;
-            font-size: 16px;
-            border: 2px solid #667eea;
-            border-radius: 10px;
-            background: white;
-            cursor: pointer;
-            margin-bottom: 15px;
-        }
-
-        .reveal-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
-            display: none;
             justify-content: center;
+            gap: 8px;
+        }
+        .btn:focus-visible { outline: none; box-shadow: var(--ring); }
+        .btn:active { transform: translateY(1px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn--primary { background: linear-gradient(135deg, var(--primary), var(--primary-strong)); color: #fff; box-shadow: var(--shadow-soft); }
+        .btn--primary:not(:disabled):hover { box-shadow: 0 12px 28px -10px rgba(79, 70, 229, 0.7); }
+
+        .btn--accent { background: linear-gradient(135deg, var(--accent), var(--accent-strong)); color: #fff; box-shadow: var(--shadow-soft); }
+        .btn--accent:not(:disabled):hover { box-shadow: 0 12px 28px -10px rgba(217, 119, 6, 0.7); }
+
+        .btn--ghost { background: var(--surface-soft); color: var(--text-soft); }
+        .btn--ghost:hover { background: #ececf6; }
+
+        .btn--block { width: 100%; }
+        .btn--icon { padding: 12px; }
+
+        .add-row .btn { white-space: nowrap; }
+
+        .hint { margin-top: 8px; font-size: 0.82rem; color: var(--text-muted); }
+
+        .feedback {
+            min-height: 20px;
+            margin-top: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--danger-strong);
+        }
+
+        .list-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin: 26px 0 12px;
+        }
+        .list-head h2 { font-size: 1rem; color: var(--text); }
+        .count-pill {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--primary-strong);
+            background: rgba(99, 102, 241, 0.12);
+            padding: 4px 12px;
+            border-radius: 999px;
+        }
+
+        .participants {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 260px;
+            overflow-y: auto;
+            margin: 0 -4px;
+            padding: 0 4px 2px;
+        }
+
+        .participants__empty {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            padding: 28px 12px;
+            border: 2px dashed var(--surface-line);
+            border-radius: var(--radius-md);
+        }
+
+        .participant {
+            display: flex;
             align-items: center;
+            gap: 12px;
+            background: var(--surface-soft);
+            border: 1px solid var(--surface-line);
+            padding: 10px 12px 10px 14px;
+            border-radius: var(--radius-md);
+            animation: fadeUp 0.25s ease both;
+        }
+        .participant__avatar {
+            width: 34px; height: 34px; flex: none;
+            border-radius: 50%;
+            display: grid; place-items: center;
+            font-weight: 700; font-size: 0.9rem; color: #fff;
+        }
+        .participant__name { flex: 1; font-weight: 600; word-break: break-word; }
+        .participant__remove {
+            flex: none;
+            width: 32px; height: 32px;
+            border: none; border-radius: 8px;
+            background: transparent; color: var(--text-muted);
+            font-size: 1.2rem; line-height: 1; cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .participant__remove:hover { background: rgba(239, 68, 68, 0.12); color: var(--danger-strong); }
+        .participant__remove:focus-visible { outline: none; box-shadow: var(--ring); }
+
+        .actions { display: flex; flex-direction: column; gap: 10px; margin-top: 26px; }
+
+        /* Reveal step */
+        .progress {
+            display: flex; align-items: center; gap: 10px;
+            background: var(--surface-soft);
+            border: 1px solid var(--surface-line);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            margin-bottom: 22px;
+        }
+        .progress__bar { flex: 1; height: 8px; border-radius: 999px; background: var(--surface-line); overflow: hidden; }
+        .progress__fill { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width 0.5s ease; }
+        .progress__text { font-size: 0.82rem; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
+
+        .reveal-done {
+            text-align: center;
+            padding: 8px 4px 4px;
+        }
+        .reveal-done__emoji { font-size: 2.4rem; }
+        .reveal-done h2 { margin: 8px 0; font-size: 1.25rem; }
+        .reveal-done p { color: var(--text-soft); font-size: 0.92rem; margin-bottom: 18px; }
+
+        /* Overlay base */
+        .overlay {
+            position: fixed; inset: 0;
+            display: none;
+            justify-content: center; align-items: center;
+            padding: 20px;
             z-index: 1000;
         }
+        .overlay.is-open { display: flex; }
 
-        .reveal-box {
-            background: white;
-            padding: 60px;
-            border-radius: 30px;
-            text-align: center;
-            position: relative;
-            animation: popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
-            max-width: 600px;
-        }
-
-        @keyframes popIn {
-            0% {
-                transform: scale(0) rotate(180deg);
-                opacity: 0;
-            }
-            100% {
-                transform: scale(1) rotate(0deg);
-                opacity: 1;
-            }
-        }
-
-        .reveal-box h2 {
-            font-size: 3em;
-            color: #667eea;
-            margin-bottom: 20px;
-            animation: glow 2s ease-in-out infinite;
-        }
-
-        @keyframes glow {
-            0%, 100% {
-                text-shadow: 0 0 20px #667eea, 0 0 30px #667eea;
-            }
-            50% {
-                text-shadow: 0 0 30px #764ba2, 0 0 40px #764ba2;
-            }
-        }
-
-        .secret-friend {
-            font-size: 2.5em;
-            color: #764ba2;
-            font-weight: bold;
-            margin: 30px 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-            border-radius: 15px;
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.05);
-            }
-        }
-
-        .funny-phrase {
-            font-size: 1.3em;
-            color: #555;
-            font-style: italic;
-            margin: 20px 0;
-            line-height: 1.6;
-        }
-
-        .close-btn {
-            background: #ff4757;
-            margin-top: 20px;
-        }
-
-        .balloon {
-            position: fixed;
-            width: 60px;
-            height: 75px;
-            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-            z-index: 999;
-            animation: floatUp 5s ease-out forwards;
-            box-shadow: inset -10px -10px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .balloon::before {
-            content: '';
-            position: absolute;
-            bottom: -20px;
-            left: 50%;
-            width: 2px;
-            height: 40px;
-            background: #333;
-            transform: translateX(-50%);
-        }
-
-        .balloon::after {
-            content: '▼';
-            position: absolute;
-            bottom: -30px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #333;
-            font-size: 10px;
-        }
-
-        @keyframes floatUp {
-            0% {
-                transform: translateY(100vh) translateX(0) rotate(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(-150vh) translateX(var(--random-x)) rotate(var(--random-rotation));
-                opacity: 0.3;
-            }
-        }
-
-        @keyframes colorChange {
-            0% { filter: hue-rotate(0deg) brightness(1.2); }
-            25% { filter: hue-rotate(90deg) brightness(1.4); }
-            50% { filter: hue-rotate(180deg) brightness(1.2); }
-            75% { filter: hue-rotate(270deg) brightness(1.4); }
-            100% { filter: hue-rotate(360deg) brightness(1.2); }
-        }
-
-        .balloon.color-changing {
-            animation: floatUp 5s ease-out forwards, colorChange 3s ease-in-out infinite;
-        }
-
-        .confetti {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            animation: fall 4s linear infinite;
-            z-index: 999;
-        }
-
-        @keyframes fall {
-            to {
-                transform: translateY(100vh) rotate(360deg);
-            }
-        }
-
-        .gift-3d {
-            font-size: 100px;
-            animation: spin3d 3s ease-in-out infinite;
-            display: inline-block;
-        }
-
-        @keyframes spin3d {
-            0%, 100% {
-                transform: rotateY(0deg) rotateX(0deg);
-            }
-            50% {
-                transform: rotateY(180deg) rotateX(20deg);
-            }
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        .floating-button {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            border: none;
-            padding: 20px 30px;
-            font-size: 18px;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(240, 147, 251, 0.5);
-            z-index: 100;
-            transition: all 0.3s;
-            display: none;
-            animation: pulse-float 2s ease-in-out infinite;
-        }
-
-        .floating-button:hover {
-            transform: translateY(-5px) scale(1.05);
-            box-shadow: 0 15px 40px rgba(240, 147, 251, 0.7);
-        }
-
-        @keyframes pulse-float {
-            0%, 100% {
-                transform: translateY(0);
-            }
-            50% {
-                transform: translateY(-10px);
-            }
-        }
-
-        .assignments-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 3000;
-        }
-
-        .assignments-box {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            max-width: 600px;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-        }
-
-        .assignments-box h2 {
-            color: #667eea;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .assignment-item {
-            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 18px;
-        }
-
-        .assignment-arrow {
-            color: #667eea;
-            font-weight: bold;
-            font-size: 24px;
-        }
-
-        .intro-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
+        /* Suspense */
+        .suspense {
+            background: linear-gradient(155deg, var(--bg-1), var(--bg-3));
+            z-index: 1100;
+            flex-direction: column;
+            text-align: center; color: #fff;
             overflow: hidden;
         }
+        .suspense__gift { font-size: 5rem; animation: bob 1.4s ease-in-out infinite; }
+        @keyframes bob { 0%,100% { transform: translateY(0) rotate(-4deg);} 50% { transform: translateY(-16px) rotate(4deg);} }
+        .suspense__msg { font-size: clamp(1.2rem, 5vw, 1.7rem); font-weight: 700; margin-top: 24px; max-width: 16ch; min-height: 2.2em; }
+        .suspense__dots { margin-top: 18px; display: flex; gap: 8px; }
+        .suspense__dots span { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.85); animation: blink 1.2s infinite; }
+        .suspense__dots span:nth-child(2){ animation-delay: 0.2s; }
+        .suspense__dots span:nth-child(3){ animation-delay: 0.4s; }
+        @keyframes blink { 0%,100%{ opacity: 0.3; transform: scale(0.8);} 50%{ opacity: 1; transform: scale(1);} }
 
-        .intro-content {
+        /* Reveal card */
+        .reveal { background: rgba(15, 13, 40, 0.72); backdrop-filter: blur(6px); z-index: 1200; }
+        .reveal__card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: clamp(28px, 7vw, 44px);
             text-align: center;
-            z-index: 2001;
-            position: relative;
+            max-width: 440px; width: 100%;
+            box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
+            animation: pop 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28) both;
+        }
+        @keyframes pop { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .reveal__gift { font-size: 3rem; }
+        .reveal__eyebrow { color: var(--text-soft); font-size: 0.92rem; margin: 14px 0 4px; }
+        .reveal__eyebrow strong { color: var(--text); }
+        .reveal__name {
+            font-size: clamp(1.8rem, 8vw, 2.6rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-strong), var(--accent-strong));
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 6px 0 18px;
+            word-break: break-word;
+        }
+        .reveal__phrase { color: var(--text-soft); font-style: italic; line-height: 1.55; margin-bottom: 26px; }
+
+        /* Generic modal (assignments) */
+        .modal { background: rgba(15, 13, 40, 0.72); backdrop-filter: blur(6px); z-index: 1300; }
+        .modal__card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: clamp(24px, 6vw, 36px);
+            max-width: 480px; width: 100%;
+            max-height: 82dvh; overflow-y: auto;
+            box-shadow: var(--shadow-card);
+        }
+        .modal__title { text-align: center; margin-bottom: 6px; font-size: 1.3rem; }
+        .modal__note { text-align: center; color: var(--text-muted); font-size: 0.82rem; margin-bottom: 20px; }
+        .assignment {
+            display: flex; align-items: center; gap: 12px;
+            background: var(--surface-soft);
+            border: 1px solid var(--surface-line);
+            border-radius: var(--radius-md);
+            padding: 12px 14px; margin-bottom: 8px;
+        }
+        .assignment__from, .assignment__to { font-weight: 700; flex: 1; word-break: break-word; }
+        .assignment__to { text-align: right; color: var(--primary-strong); }
+        .assignment__arrow { color: var(--accent-strong); font-size: 1.1rem; flex: none; }
+
+        /* Floating organizer button */
+        .floating {
+            position: fixed; right: 18px; bottom: 18px; z-index: 900;
+            display: none;
+        }
+        .floating.is-visible { display: inline-flex; }
+
+        /* Confetti */
+        .confetti-piece {
+            position: fixed; top: -16px;
+            width: 9px; height: 14px;
+            z-index: 1250; pointer-events: none;
+            border-radius: 2px;
+            animation: confetti-fall linear forwards;
+        }
+        @keyframes confetti-fall {
+            to { transform: translateY(105dvh) rotate(720deg); opacity: 0.9; }
         }
 
-        .intro-text {
-            font-size: 3.5em;
-            color: white;
-            font-weight: bold;
-            text-shadow: 0 0 30px rgba(255, 255, 255, 0.8),
-                         0 0 60px rgba(255, 255, 255, 0.5);
-            margin: 30px 0;
-            opacity: 0;
-            animation: fadeInOut 3s ease-in-out forwards;
+        .footnote { text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 0 20px 22px; }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
         }
 
-        .intro-text:nth-child(1) { animation-delay: 0s; }
-        .intro-text:nth-child(2) { animation-delay: 3s; }
-        .intro-text:nth-child(3) { animation-delay: 6s; }
-        .intro-text:nth-child(4) { animation-delay: 9s; }
-
-        @keyframes fadeInOut {
-            0% {
-                opacity: 0;
-                transform: scale(0.5) translateY(50px);
-            }
-            15% {
-                opacity: 1;
-                transform: scale(1.2) translateY(0);
-            }
-            30%, 70% {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-            85% {
-                opacity: 1;
-                transform: scale(1.1) translateY(-20px);
-            }
-            100% {
-                opacity: 0;
-                transform: scale(0.8) translateY(-50px);
-            }
-        }
-
-        .background-balloon {
-            position: absolute;
-            width: 80px;
-            height: 100px;
-            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-            opacity: 0.3;
-            animation: floatBackground 8s ease-in-out infinite;
-        }
-
-        @keyframes floatBackground {
-            0%, 100% {
-                transform: translateY(0) translateX(0) rotate(0deg);
-            }
-            25% {
-                transform: translateY(-30px) translateX(20px) rotate(5deg);
-            }
-            50% {
-                transform: translateY(-50px) translateX(-20px) rotate(-5deg);
-            }
-            75% {
-                transform: translateY(-30px) translateX(15px) rotate(3deg);
-            }
+        @media (max-width: 420px) {
+            .add-row { flex-direction: column; }
+            .add-row .btn { width: 100%; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎁 Amigo Secreto 🎁</h1>
-        
-        <div class="input-group" id="inputSection">
-            <input type="text" id="nameInput" placeholder="Escribe el nombre del participante">
-            <button onclick="addParticipant()">Agregar Participante</button>
+    <main class="app" role="main">
+        <header class="app__header">
+            <span class="app__badge">🎁 Sorteo privado</span>
+            <h1 class="app__title">Amigo Secreto</h1>
+            <p class="app__subtitle">Reparte los amigos secretos sin trampas. Todo se queda en este dispositivo.</p>
+        </header>
+
+        <div class="app__body">
+            <!-- STEP 1: Setup -->
+            <section class="step is-active" id="stepSetup" aria-labelledby="setupHeading">
+                <h2 id="setupHeading" class="field-label" style="font-size:1rem;color:var(--text);margin-bottom:14px;">Agrega a los participantes</h2>
+
+                <label class="field-label" for="nameInput">Nombre del participante</label>
+                <div class="add-row">
+                    <input class="input" type="text" id="nameInput" maxlength="40" autocomplete="off"
+                           placeholder="Ej. María, Juan, Abuela…" aria-describedby="nameFeedback">
+                    <button class="btn btn--primary" id="addBtn" type="button">+ Agregar</button>
+                </div>
+                <p class="feedback" id="nameFeedback" role="alert" aria-live="assertive"></p>
+
+                <div class="list-head">
+                    <h2>Participantes</h2>
+                    <span class="count-pill" id="countPill">0</span>
+                </div>
+                <ul class="participants" id="participantsList" aria-live="polite"></ul>
+
+                <div class="actions">
+                    <button class="btn btn--accent btn--block" id="assignBtn" type="button" disabled>
+                        🎲 Sortear amigos secretos
+                    </button>
+                    <button class="btn btn--ghost btn--block" id="clearAllBtn" type="button" hidden>
+                        Vaciar lista
+                    </button>
+                </div>
+            </section>
+
+            <!-- STEP 2: Reveal -->
+            <section class="step" id="stepReveal" aria-labelledby="revealHeading">
+                <div class="progress" aria-hidden="false">
+                    <div class="progress__bar"><div class="progress__fill" id="progressFill"></div></div>
+                    <span class="progress__text" id="progressText">0 / 0</span>
+                </div>
+
+                <div id="revealPicker">
+                    <h2 id="revealHeading" class="field-label" style="font-size:1rem;color:var(--text);margin-bottom:6px;">Es tu turno</h2>
+                    <p class="hint" style="margin:0 0 14px;">Pásale el dispositivo a cada persona. Elige tu nombre y nadie más verá tu resultado.</p>
+
+                    <label class="field-label" for="nameSelect">¿Quién eres?</label>
+                    <select class="input" id="nameSelect" aria-describedby="revealFeedback">
+                        <option value="">— Elige tu nombre —</option>
+                    </select>
+                    <p class="feedback" id="revealFeedback" role="alert" aria-live="assertive"></p>
+
+                    <div class="actions">
+                        <button class="btn btn--primary btn--block" id="revealBtn" type="button">✨ Ver mi amigo secreto</button>
+                    </div>
+                </div>
+
+                <div class="reveal-done" id="revealDone" hidden>
+                    <div class="reveal-done__emoji">🎉</div>
+                    <h2>¡Listo, todos ya saben a quién regalar!</h2>
+                    <p>Que empiece la magia de los regalos.</p>
+                </div>
+
+                <div class="actions" style="margin-top:28px;">
+                    <button class="btn btn--ghost btn--block" id="resetBtn" type="button">↺ Empezar un nuevo sorteo</button>
+                </div>
+            </section>
         </div>
 
-        <div class="participants-list" id="participantsList"></div>
+        <p class="footnote">Hecho con cariño · Tus datos no salen de este navegador</p>
+    </main>
 
-        <button onclick="assignSecretFriends()" id="assignBtn" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-            Asignar Amigos Secretos
-        </button>
+    <!-- Suspense overlay -->
+    <div class="overlay suspense" id="suspense" aria-hidden="true">
+        <div class="suspense__gift">🎁</div>
+        <p class="suspense__msg" id="suspenseMsg"></p>
+        <div class="suspense__dots"><span></span><span></span><span></span></div>
+    </div>
 
-        <div class="select-section hidden" id="selectSection">
-            <h3 style="color: #667eea; margin-bottom: 15px;">Selecciona tu nombre:</h3>
-            <select id="nameSelect">
-                <option value="">-- Elige tu nombre --</option>
-            </select>
-            <button onclick="revealMyFriend()">✨ Ver Mi Confidente ✨</button>
+    <!-- Reveal overlay -->
+    <div class="overlay reveal" id="revealOverlay" role="dialog" aria-modal="true" aria-labelledby="revealCardTitle" aria-hidden="true">
+        <div class="reveal__card">
+            <div class="reveal__gift">🎁</div>
+            <p class="reveal__eyebrow" id="revealCardTitle"><strong id="giverLabel"></strong>, le regalas a…</p>
+            <div class="reveal__name" id="secretName">—</div>
+            <p class="reveal__phrase" id="funnyPhrase"></p>
+            <button class="btn btn--primary btn--block" id="closeRevealBtn" type="button">Entendido, ocultar</button>
         </div>
     </div>
 
-    <div class="reveal-container" id="revealContainer">
-        <div class="reveal-box">
-            <div class="gift-3d">🎁</div>
-            <h2>¡Tu Amigo Secreto es!</h2>
-            <div class="secret-friend" id="secretFriendName">---</div>
-            <div class="funny-phrase" id="funnyPhrase"></div>
-            <button class="close-btn" onclick="closeReveal()">Cerrar</button>
-        </div>
-    </div>
-
-    <div class="intro-screen" id="introScreen">
-        <div class="intro-content">
-            <div class="intro-text">La Familia es todo 🎉</div>
-            <div class="intro-text">La Familia es lo mejor 💼</div>
-            <div class="intro-text">Tener Familia es un tesoro 🤝</div>
-            <div class="intro-text">Mi Familia, Tu Familia, Nuestra Familia ✨</div>
-        </div>
-    </div>
-
-    <div class="assignments-modal" id="assignmentsModal">
-        <div class="assignments-box">
-            <h2>📋 Lista de Asignaciones</h2>
+    <!-- Assignments (organizer) overlay -->
+    <div class="overlay modal" id="assignmentsModal" role="dialog" aria-modal="true" aria-labelledby="assignmentsTitle" aria-hidden="true">
+        <div class="modal__card">
+            <h2 class="modal__title" id="assignmentsTitle">📋 Todas las asignaciones</h2>
+            <p class="modal__note">Vista del organizador · revela todos los pares</p>
             <div id="assignmentsList"></div>
-            <button onclick="closeAssignments()" style="width: 100%; margin-top: 20px;">Cerrar</button>
+            <button class="btn btn--ghost btn--block" id="closeAssignmentsBtn" type="button" style="margin-top:16px;">Cerrar</button>
         </div>
     </div>
 
-    <button class="floating-button" id="floatingBtn" onclick="showAssignments()">
-        👀 Ver Asignaciones
-    </button>
+    <button class="btn btn--accent floating" id="floatingBtn" type="button">👀 Ver asignaciones</button>
 
     <script>
-        let participants = [];
-        let assignments = {};
-        let revealedNames = [];
+    (function () {
+        "use strict";
 
-        const funnyPhrases = [
-            "¡Prepárate para ser el Santa Claus más sigiloso del año! 🎅",
-            "Con grandes regalos vienen grandes responsabilidades... ¡y también grandes sonrisas! 😄",
-            "La amistad es como un regalo: mejor cuando es sorpresa 🎉",
-            "Recuerda: lo que pasa en el amigo secreto, se queda en el amigo secreto 🤫",
-            "¡Es hora de poner tu creatividad en modo LEGENDARIO! 🌟",
-            "Un buen amigo te conoce bien, un amigo secreto... te conoce TODO 👀",
-            "¡Que comience la operación regalo perfecto! Misión: hacer sonreír 😊",
-            "Dicen que el dinero no compra la felicidad, pero un buen regalo de amigo secreto... ¡se acerca! 💝",
-            "Plot twist: ¡Ahora eres oficialmente un agente secreto del regalo! 🕵️",
-            "La vida es mejor cuando compartes regalos con amigos... ¡sobre todo cuando es secreto! 🎊"
+        const STORAGE_KEY = "amigoSecreto.v2";
+        const MAX_NAME_LENGTH = 40;
+
+        const AVATAR_COLORS = [
+            "#6366f1", "#ec4899", "#14b8a6", "#f59e0b", "#8b5cf6",
+            "#0ea5e9", "#ef4444", "#10b981", "#f97316", "#3b82f6"
+        ];
+        const CONFETTI_COLORS = ["#6366f1", "#f59e0b", "#ec4899", "#14b8a6", "#8b5cf6", "#ef4444"];
+
+        const SUSPENSE_MESSAGES = [
+            "Mezclando los nombres…",
+            "Guardando bien el secreto…",
+            "Eligiendo a tu persona especial…",
+            "¡Casi listo!"
         ];
 
-        function addParticipant() {
-            const input = document.getElementById('nameInput');
-            const name = input.value.trim();
-            
-            if (name && !participants.includes(name)) {
-                participants.push(name);
-                updateParticipantsList();
-                input.value = '';
-            }
+        const FUNNY_PHRASES = [
+            "¡Prepárate para ser el Santa más sigiloso del año! 🎅",
+            "Un buen regalo dice más que mil palabras… ¡o casi! 💝",
+            "Lo que pasa en el amigo secreto, se queda en el amigo secreto 🤫",
+            "Misión aceptada: hacer sonreír a alguien especial 😊",
+            "Pon tu creatividad en modo legendario 🌟",
+            "Que comience la operación regalo perfecto 🎯",
+            "Ahora eres oficialmente un agente secreto del regalo 🕵️",
+            "La magia está en el detalle, no en el precio ✨"
+        ];
+
+        // --- State ---
+        let state = { participants: [], assignments: {}, revealed: [], phase: "setup" };
+        let suspenseTimers = [];
+
+        // --- DOM helpers ---
+        const $ = (id) => document.getElementById(id);
+        const els = {
+            stepSetup: $("stepSetup"),
+            stepReveal: $("stepReveal"),
+            nameInput: $("nameInput"),
+            addBtn: $("addBtn"),
+            nameFeedback: $("nameFeedback"),
+            participantsList: $("participantsList"),
+            countPill: $("countPill"),
+            assignBtn: $("assignBtn"),
+            clearAllBtn: $("clearAllBtn"),
+            progressFill: $("progressFill"),
+            progressText: $("progressText"),
+            revealPicker: $("revealPicker"),
+            revealDone: $("revealDone"),
+            nameSelect: $("nameSelect"),
+            revealFeedback: $("revealFeedback"),
+            revealBtn: $("revealBtn"),
+            resetBtn: $("resetBtn"),
+            suspense: $("suspense"),
+            suspenseMsg: $("suspenseMsg"),
+            revealOverlay: $("revealOverlay"),
+            giverLabel: $("giverLabel"),
+            secretName: $("secretName"),
+            funnyPhrase: $("funnyPhrase"),
+            closeRevealBtn: $("closeRevealBtn"),
+            assignmentsModal: $("assignmentsModal"),
+            assignmentsList: $("assignmentsList"),
+            closeAssignmentsBtn: $("closeAssignmentsBtn"),
+            floatingBtn: $("floatingBtn")
+        };
+
+        // --- Persistence ---
+        function save() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* storage unavailable */ }
         }
-
-        function updateParticipantsList() {
-            const list = document.getElementById('participantsList');
-            list.innerHTML = '';
-            
-            participants.forEach((name, index) => {
-                const item = document.createElement('div');
-                item.className = 'participant-item';
-                item.innerHTML = `
-                    <span>${name}</span>
-                    <button class="remove-btn" onclick="removeParticipant(${index})">Eliminar</button>
-                `;
-                list.appendChild(item);
-            });
-        }
-
-        function removeParticipant(index) {
-            participants.splice(index, 1);
-            updateParticipantsList();
-        }
-
-        function assignSecretFriends() {
-            if (participants.length < 2) {
-                alert('Necesitas al menos 2 participantes');
-                return;
-            }
-
-            // Algoritmo para asegurar que nadie se toque a sí mismo
-            let validAssignment = false;
-            let attempts = 0;
-            const maxAttempts = 1000;
-
-            while (!validAssignment && attempts < maxAttempts) {
-                const shuffled = [...participants].sort(() => Math.random() - 0.5);
-                assignments = {};
-                validAssignment = true;
-                
-                for (let i = 0; i < participants.length; i++) {
-                    const giver = participants[i];
-                    const receiver = shuffled[i];
-                    
-                    // Verificar que nadie se toque a sí mismo
-                    if (giver === receiver) {
-                        validAssignment = false;
-                        break;
-                    }
-                    
-                    assignments[giver] = receiver;
+        function load() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                if (parsed && Array.isArray(parsed.participants)) {
+                    state = {
+                        participants: parsed.participants,
+                        assignments: parsed.assignments || {},
+                        revealed: Array.isArray(parsed.revealed) ? parsed.revealed : [],
+                        phase: parsed.phase === "reveal" ? "reveal" : "setup"
+                    };
                 }
-                
-                attempts++;
-            }
-
-            if (!validAssignment) {
-                alert('No se pudo generar una asignación válida. Por favor intenta de nuevo.');
-                return;
-            }
-            
-            // Ocultar sección de entrada y mostrar selector
-            document.getElementById('inputSection').classList.add('hidden');
-            document.getElementById('participantsList').classList.add('hidden');
-            document.getElementById('assignBtn').classList.add('hidden');
-            document.getElementById('selectSection').classList.remove('hidden');
-            
-            updateNameSelect();
-            
-            alert('¡Amigos secretos asignados! Ahora cada persona debe seleccionar su nombre.');
+            } catch (e) { /* ignore corrupt data */ }
         }
 
-        function updateNameSelect() {
-            const select = document.getElementById('nameSelect');
-            select.innerHTML = '<option value="">-- Elige tu nombre --</option>';
-            
-            const remainingNames = participants.filter(name => !revealedNames.includes(name));
-            
-            remainingNames.forEach(name => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                select.appendChild(option);
+        // --- Secure random + cyclic derangement ---
+        function randomInt(max) {
+            if (max <= 0) return 0;
+            if (window.crypto && window.crypto.getRandomValues) {
+                const limit = Math.floor(0x100000000 / max) * max;
+                const buf = new Uint32Array(1);
+                let x;
+                do { window.crypto.getRandomValues(buf); x = buf[0]; } while (x >= limit);
+                return x % max;
+            }
+            return Math.floor(Math.random() * max);
+        }
+
+        function shuffled(arr) {
+            const a = arr.slice();
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = randomInt(i + 1);
+                const t = a[i]; a[i] = a[j]; a[j] = t;
+            }
+            return a;
+        }
+
+        // Single-cycle derangement: guarantees nobody gets themselves, in one pass.
+        function buildAssignments(names) {
+            const order = shuffled(names);
+            const map = {};
+            for (let i = 0; i < order.length; i++) {
+                map[order[i]] = order[(i + 1) % order.length];
+            }
+            return map;
+        }
+
+        // --- Rendering ---
+        function initials(name) {
+            const parts = name.trim().split(/\s+/);
+            const a = parts[0] ? parts[0][0] : "";
+            const b = parts[1] ? parts[1][0] : "";
+            return (a + b).toUpperCase();
+        }
+        function colorFor(name) {
+            let h = 0;
+            for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+            return AVATAR_COLORS[h % AVATAR_COLORS.length];
+        }
+
+        function renderParticipants() {
+            const list = els.participantsList;
+            list.textContent = "";
+            els.countPill.textContent = String(state.participants.length);
+            els.clearAllBtn.hidden = state.participants.length === 0;
+
+            if (state.participants.length === 0) {
+                const empty = document.createElement("li");
+                empty.className = "participants__empty";
+                empty.textContent = "Aún no hay participantes. Agrega al menos 2 para sortear.";
+                list.appendChild(empty);
+            } else {
+                state.participants.forEach((name) => {
+                    const li = document.createElement("li");
+                    li.className = "participant";
+
+                    const avatar = document.createElement("span");
+                    avatar.className = "participant__avatar";
+                    avatar.style.backgroundColor = colorFor(name);
+                    avatar.textContent = initials(name); // safe: textContent
+                    avatar.setAttribute("aria-hidden", "true");
+
+                    const span = document.createElement("span");
+                    span.className = "participant__name";
+                    span.textContent = name; // safe: textContent prevents XSS
+
+                    const remove = document.createElement("button");
+                    remove.className = "participant__remove";
+                    remove.type = "button";
+                    remove.dataset.name = name;
+                    remove.setAttribute("aria-label", "Eliminar a " + name);
+                    remove.textContent = "✕";
+
+                    li.append(avatar, span, remove);
+                    list.appendChild(li);
+                });
+            }
+            els.assignBtn.disabled = state.participants.length < 2;
+        }
+
+        function renderRevealStep() {
+            const total = state.participants.length;
+            const done = state.revealed.length;
+            els.progressText.textContent = done + " / " + total;
+            els.progressFill.style.width = total ? Math.round((done / total) * 100) + "%" : "0%";
+
+            const remaining = state.participants.filter((n) => state.revealed.indexOf(n) === -1);
+            const select = els.nameSelect;
+            select.textContent = "";
+            const placeholder = document.createElement("option");
+            placeholder.value = "";
+            placeholder.textContent = "— Elige tu nombre —";
+            select.appendChild(placeholder);
+            remaining.forEach((name) => {
+                const opt = document.createElement("option");
+                opt.value = name;
+                opt.textContent = name;
+                select.appendChild(opt);
             });
 
-            // Si todos vieron su confidente, mostrar el botón de asignaciones
-            if (revealedNames.length === participants.length) {
-                document.getElementById('floatingBtn').style.display = 'block';
-                alert('🎉 ¡Todos han visto su amigo secreto! Ahora puedes ver todas las asignaciones presionando el botón flotante.');
+            const allDone = total > 0 && done === total;
+            els.revealPicker.hidden = allDone;
+            els.revealDone.hidden = !allDone;
+            els.floatingBtn.classList.toggle("is-visible", allDone);
+        }
+
+        function render() {
+            const onReveal = state.phase === "reveal";
+            els.stepSetup.classList.toggle("is-active", !onReveal);
+            els.stepReveal.classList.toggle("is-active", onReveal);
+            if (onReveal) renderRevealStep(); else renderParticipants();
+            els.floatingBtn.classList.toggle("is-visible",
+                onReveal && state.participants.length > 0 && state.revealed.length === state.participants.length);
+        }
+
+        // --- Feedback ---
+        function flash(el, msg) {
+            el.textContent = msg;
+            if (msg) {
+                clearTimeout(el._t);
+                el._t = setTimeout(() => { el.textContent = ""; }, 3500);
             }
         }
 
-        function revealMyFriend() {
-            const select = document.getElementById('nameSelect');
-            const name = select.value;
-            
-            if (!name) {
-                alert('Por favor selecciona tu nombre');
-                return;
+        // --- Setup actions ---
+        function normalize(raw) {
+            return raw.replace(/\s+/g, " ").trim();
+        }
+
+        function addParticipant() {
+            const name = normalize(els.nameInput.value);
+            if (!name) { flash(els.nameFeedback, "Escribe un nombre."); return; }
+            if (name.length > MAX_NAME_LENGTH) { flash(els.nameFeedback, "Ese nombre es demasiado largo."); return; }
+            const exists = state.participants.some((p) => p.toLowerCase() === name.toLowerCase());
+            if (exists) { flash(els.nameFeedback, "Ese nombre ya está en la lista."); return; }
+
+            state.participants.push(name);
+            save();
+            renderParticipants();
+            els.nameInput.value = "";
+            els.nameInput.focus();
+        }
+
+        function removeParticipant(name) {
+            state.participants = state.participants.filter((p) => p !== name);
+            save();
+            renderParticipants();
+        }
+
+        function clearAll() {
+            if (state.participants.length && !confirm("¿Vaciar toda la lista de participantes?")) return;
+            state.participants = [];
+            save();
+            renderParticipants();
+        }
+
+        function doSort() {
+            if (state.participants.length < 2) return;
+            state.assignments = buildAssignments(state.participants);
+            state.revealed = [];
+            state.phase = "reveal";
+            save();
+            render();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function resetGame() {
+            if (!confirm("Esto borrará el sorteo actual y volverás a la lista. ¿Continuar?")) return;
+            state = { participants: state.participants.slice(), assignments: {}, revealed: [], phase: "setup" };
+            save();
+            render();
+        }
+
+        // --- Reveal flow ---
+        function clearSuspense() {
+            suspenseTimers.forEach((t) => clearTimeout(t));
+            suspenseTimers = [];
+        }
+
+        function openSuspenseThenReveal(name) {
+            els.suspense.classList.add("is-open");
+            els.suspense.setAttribute("aria-hidden", "false");
+
+            const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            const stepMs = reduce ? 250 : 850;
+            const totalMs = reduce ? 600 : SUSPENSE_MESSAGES.length * stepMs;
+
+            SUSPENSE_MESSAGES.forEach((msg, i) => {
+                suspenseTimers.push(setTimeout(() => { els.suspenseMsg.textContent = msg; }, i * stepMs));
+            });
+            els.suspenseMsg.textContent = SUSPENSE_MESSAGES[0];
+
+            suspenseTimers.push(setTimeout(() => {
+                els.suspense.classList.remove("is-open");
+                els.suspense.setAttribute("aria-hidden", "true");
+                showReveal(name);
+            }, totalMs));
+        }
+
+        function showReveal(name) {
+            els.giverLabel.textContent = name;
+            els.secretName.textContent = state.assignments[name] || "—";
+            els.funnyPhrase.textContent = FUNNY_PHRASES[randomInt(FUNNY_PHRASES.length)];
+            els.revealOverlay.classList.add("is-open");
+            els.revealOverlay.setAttribute("aria-hidden", "false");
+            els.closeRevealBtn.focus();
+            launchConfetti();
+
+            if (state.revealed.indexOf(name) === -1) {
+                state.revealed.push(name);
+                save();
             }
+        }
 
-            if (revealedNames.includes(name)) {
-                alert('Este nombre ya vio su confidente');
-                return;
-            }
-
-            // Mostrar pantalla de introducción
-            const introScreen = document.getElementById('introScreen');
-            introScreen.style.display = 'flex';
-            createBackgroundBalloons();
-
-            // Después de 12 segundos, mostrar la revelación
-            setTimeout(() => {
-                introScreen.style.display = 'none';
-                document.querySelectorAll('.background-balloon').forEach(el => el.remove());
-                
-                document.getElementById('secretFriendName').textContent = assignments[name];
-                document.getElementById('funnyPhrase').textContent = 
-                    funnyPhrases[Math.floor(Math.random() * funnyPhrases.length)];
-                
-                revealedNames.push(name);
-                updateNameSelect();
-                
-                createSpectacularBalloons();
-                createConfetti();
-                document.getElementById('revealContainer').style.display = 'flex';
-            }, 12500);
+        function startReveal() {
+            const name = els.nameSelect.value;
+            if (!name) { flash(els.revealFeedback, "Selecciona tu nombre primero."); return; }
+            if (state.revealed.indexOf(name) !== -1) { flash(els.revealFeedback, "Ese nombre ya vio su resultado."); return; }
+            openSuspenseThenReveal(name);
         }
 
         function closeReveal() {
-            document.getElementById('revealContainer').style.display = 'none';
-            document.querySelectorAll('.balloon, .confetti').forEach(el => el.remove());
+            els.revealOverlay.classList.remove("is-open");
+            els.revealOverlay.setAttribute("aria-hidden", "true");
+            removeConfetti();
+            renderRevealStep();
+            els.nameSelect.focus();
         }
 
-        function createBackgroundBalloons() {
-            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#f0932b', '#eb4d4b', '#6c5ce7', '#ff85a2', '#5f27cd', '#00d2d3'];
-            
-            for (let i = 0; i < 20; i++) {
-                const balloon = document.createElement('div');
-                balloon.className = 'background-balloon';
-                balloon.style.left = Math.random() * 100 + '%';
-                balloon.style.top = Math.random() * 100 + '%';
-                balloon.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                balloon.style.animationDelay = Math.random() * 2 + 's';
-                balloon.style.animationDuration = (6 + Math.random() * 4) + 's';
-                document.getElementById('introScreen').appendChild(balloon);
-            }
-        }
-
+        // --- Organizer view ---
         function showAssignments() {
-            const list = document.getElementById('assignmentsList');
-            list.innerHTML = '';
-            
-            Object.keys(assignments).forEach(giver => {
-                const item = document.createElement('div');
-                item.className = 'assignment-item';
-                item.innerHTML = `
-                    <span><strong>${giver}</strong></span>
-                    <span class="assignment-arrow">➜</span>
-                    <span><strong>${assignments[giver]}</strong></span>
-                `;
-                list.appendChild(item);
+            const wrap = els.assignmentsList;
+            wrap.textContent = "";
+            Object.keys(state.assignments).forEach((giver) => {
+                const row = document.createElement("div");
+                row.className = "assignment";
+
+                const from = document.createElement("span");
+                from.className = "assignment__from";
+                from.textContent = giver;
+
+                const arrow = document.createElement("span");
+                arrow.className = "assignment__arrow";
+                arrow.textContent = "➜";
+                arrow.setAttribute("aria-hidden", "true");
+
+                const to = document.createElement("span");
+                to.className = "assignment__to";
+                to.textContent = state.assignments[giver];
+
+                row.append(from, arrow, to);
+                wrap.appendChild(row);
             });
-            
-            document.getElementById('assignmentsModal').style.display = 'flex';
+            els.assignmentsModal.classList.add("is-open");
+            els.assignmentsModal.setAttribute("aria-hidden", "false");
+            els.closeAssignmentsBtn.focus();
         }
-
         function closeAssignments() {
-            document.getElementById('assignmentsModal').style.display = 'none';
+            els.assignmentsModal.classList.remove("is-open");
+            els.assignmentsModal.setAttribute("aria-hidden", "true");
         }
 
-        function createSpectacularBalloons() {
-            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#f0932b', '#eb4d4b', '#6c5ce7', '#ff85a2', '#5f27cd', '#00d2d3'];
-            
-            for (let i = 0; i < 25; i++) {
-                setTimeout(() => {
-                    const balloon = document.createElement('div');
-                    balloon.className = 'balloon color-changing';
-                    
-                    const startX = Math.random() * 100;
-                    const randomXMove = (Math.random() - 0.5) * 200;
-                    const randomRotation = (Math.random() - 0.5) * 360;
-                    
-                    balloon.style.left = startX + '%';
-                    balloon.style.bottom = '-100px';
-                    balloon.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                    balloon.style.setProperty('--random-x', randomXMove + 'px');
-                    balloon.style.setProperty('--random-rotation', randomRotation + 'deg');
-                    balloon.style.animationDelay = (Math.random() * 0.5) + 's';
-                    balloon.style.animationDuration = (4 + Math.random() * 2) + 's';
-                    
-                    document.body.appendChild(balloon);
-                    
-                    setTimeout(() => balloon.remove(), 6000);
-                }, i * 150);
+        // --- Confetti ---
+        function launchConfetti() {
+            if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+            const count = 70;
+            for (let i = 0; i < count; i++) {
+                const piece = document.createElement("div");
+                piece.className = "confetti-piece";
+                piece.style.left = randomInt(100) + "%";
+                piece.style.backgroundColor = CONFETTI_COLORS[randomInt(CONFETTI_COLORS.length)];
+                piece.style.animationDuration = (2.6 + randomInt(180) / 100) + "s";
+                piece.style.animationDelay = (randomInt(80) / 100) + "s";
+                document.body.appendChild(piece);
+                setTimeout(() => piece.remove(), 6000);
             }
         }
-
-        function createConfetti() {
-            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#f0932b', '#eb4d4b', '#6c5ce7'];
-            
-            for (let i = 0; i < 50; i++) {
-                const confetti = document.createElement('div');
-                confetti.className = 'confetti';
-                confetti.style.left = Math.random() * 100 + '%';
-                confetti.style.top = -10 + 'px';
-                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                confetti.style.animationDelay = Math.random() * 2 + 's';
-                confetti.style.animationDuration = (3 + Math.random() * 2) + 's';
-                document.body.appendChild(confetti);
-            }
+        function removeConfetti() {
+            document.querySelectorAll(".confetti-piece").forEach((el) => el.remove());
         }
 
-        document.getElementById('nameInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                addParticipant();
-            }
+        // --- Events ---
+        els.addBtn.addEventListener("click", addParticipant);
+        els.nameInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addParticipant(); } });
+        els.participantsList.addEventListener("click", (e) => {
+            const btn = e.target.closest(".participant__remove");
+            if (btn) removeParticipant(btn.dataset.name);
         });
+        els.clearAllBtn.addEventListener("click", clearAll);
+        els.assignBtn.addEventListener("click", doSort);
+
+        els.revealBtn.addEventListener("click", startReveal);
+        els.nameSelect.addEventListener("change", () => flash(els.revealFeedback, ""));
+        els.closeRevealBtn.addEventListener("click", closeReveal);
+        els.resetBtn.addEventListener("click", resetGame);
+
+        els.floatingBtn.addEventListener("click", showAssignments);
+        els.closeAssignmentsBtn.addEventListener("click", closeAssignments);
+
+        // Close overlays with Escape / backdrop
+        document.addEventListener("keydown", (e) => {
+            if (e.key !== "Escape") return;
+            if (els.revealOverlay.classList.contains("is-open")) closeReveal();
+            else if (els.assignmentsModal.classList.contains("is-open")) closeAssignments();
+        });
+        [["revealOverlay", closeReveal], ["assignmentsModal", closeAssignments]].forEach(([id, fn]) => {
+            els[id].addEventListener("click", (e) => { if (e.target === els[id]) fn(); });
+        });
+
+        // --- Init ---
+        load();
+        render();
+        els.nameInput.focus();
+    })();
     </script>
 </body>
 </html>
