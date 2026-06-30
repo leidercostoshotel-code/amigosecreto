@@ -26,6 +26,8 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
+/* El atributo `hidden` debe ganar siempre, incluso sobre clases con display:flex. */
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 html, body { height: 100%; }
 
