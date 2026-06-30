@@ -30,6 +30,8 @@ let gameId = null;
 let game = null;          // datos del juego actual
 let unsubGame = null;
 let unsubPlayers = null;
+let lastPlayers = [];     // última lista de jugadores recibida
+let peek = false;         // ver asignaciones ocultas (solo en esta sesión)
 
 // ============================ Arranque ============================
 async function start() {
@@ -128,6 +130,7 @@ function playersColl() { return fb.fsMod.collection(fb.db, "games", gameId, "pla
 function renderSetup() {
     showStep("setup");
     if (unsubPlayers) { unsubPlayers(); unsubPlayers = null; }
+    $("hidePlay").checked = Boolean(game.hideAssignments);
     $("setupTitle").textContent = game.title || "Participantes";
     const names = game.participants || [];
     const list = $("participantsList");
@@ -204,7 +207,12 @@ async function draw() {
                 pinHash: null, pinSalt: null, revealed: false
             });
         });
-        batch.update(gameRef(), { status: "drawn", updatedAt: fsMod.serverTimestamp() });
+        batch.update(gameRef(), {
+            status: "drawn",
+            hideAssignments: $("hidePlay").checked,
+            updatedAt: fsMod.serverTimestamp()
+        });
+        peek = false;
         await batch.commit();
     } catch (err) { console.error(err); alert("No se pudo hacer el sorteo. Revisa tu conexión."); }
 }
@@ -241,20 +249,37 @@ function renderDrawn() {
     $("shareLink").textContent = playerUrl();
 
     if (unsubPlayers) unsubPlayers();
-    const { fsMod, db } = fb;
+    const { fsMod } = fb;
     const q = fsMod.query(playersColl(), fsMod.orderBy("order"));
     unsubPlayers = fsMod.onSnapshot(q, (qs) => {
-        const players = qs.docs.map((d) => ({ id: d.id, ...d.data() }));
-        renderAssignments(players);
+        lastPlayers = qs.docs.map((d) => ({ id: d.id, ...d.data() }));
+        renderAssignments();
     }, (err) => console.error(err));
 }
 
-function renderAssignments(players) {
+function renderAssignments() {
+    const players = lastPlayers;
     const total = players.length;
     const done = players.filter((p) => p.revealed).length;
     $("progressText").textContent = done + " / " + total;
     $("progressFill").style.width = total ? Math.round((done / total) * 100) + "%" : "0%";
     $("drawnCount").textContent = String(total);
+
+    const concealed = Boolean(game.hideAssignments) && !peek;
+
+    // Nota + botón de "ver de todas formas" según el modo.
+    if (!game.hideAssignments) {
+        $("assignNote").textContent = "Vista privada del organizador. No la muestres a los jugadores. 🙈";
+        $("peekBtn").hidden = true;
+    } else if (concealed) {
+        $("assignNote").textContent = "Como tú también juegas, las asignaciones están ocultas. Revela el tuyo desde el enlace de jugador con tu PIN.";
+        $("peekBtn").hidden = false;
+        $("peekBtn").textContent = "👁️ Ver asignaciones de todas formas (spoiler)";
+    } else {
+        $("assignNote").textContent = "⚠️ Estás viendo el spoiler. Si quieres mantener tu sorpresa, vuelve a ocultarlas.";
+        $("peekBtn").hidden = false;
+        $("peekBtn").textContent = "🙈 Volver a ocultar";
+    }
 
     const wrap = $("assignmentsList");
     wrap.textContent = "";
@@ -273,7 +298,8 @@ function renderAssignments(players) {
 
         const to = document.createElement("span");
         to.className = "assignment__to";
-        to.textContent = p.receiver;
+        to.textContent = concealed ? "•••" : p.receiver;
+        if (concealed) to.style.color = "var(--text-muted)";
 
         const meta = document.createElement("span");
         meta.className = "participant__meta";
@@ -295,6 +321,16 @@ function renderAssignments(players) {
         wrap.appendChild(row);
     });
 }
+
+$("peekBtn").addEventListener("click", () => {
+    if (!peek) {
+        if (!confirm("Vas a ver a quién le toca cada quien, incluido tú. ¿Seguro?")) return;
+        peek = true;
+    } else {
+        peek = false;
+    }
+    renderAssignments();
+});
 
 async function resetPin(p) {
     if (!confirm("Restablecer el PIN de " + p.name + "? Podrá volver a entrar y crear uno nuevo.")) return;
