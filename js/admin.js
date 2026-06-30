@@ -2,7 +2,7 @@
 import { isConfigured, loadFirebase } from "./firebase-config.js";
 import {
     initials, colorFor, validateName, normalizeName,
-    buildAssignments, assignWithExclusions, makeGameCode
+    assignWithExclusions, buildCycleExcluding, makeGameCode
 } from "./core.js";
 
 const $ = (id) => document.getElementById(id);
@@ -351,8 +351,11 @@ async function draw() {
         try { forbidden = await computeForbidden(currentGameId); }
         catch (err) { console.error(err); }
     }
-    const hasExclusions = Object.values(forbidden).some((s) => s && s.size > 0);
-    const assignments = hasExclusions ? assignWithExclusions(parts, forbidden) : buildAssignments(parts);
+    // Preferimos UNA sola cadena (ciclo único): sin parejas recíprocas (A↔B)
+    // ni grupitos, respetando "no repetir". Si con las exclusiones no existe esa
+    // cadena, caemos a un derangement válido (que podría tener pares recíprocos).
+    let assignments = buildCycleExcluding(parts, forbidden);
+    if (!assignments) assignments = assignWithExclusions(parts, forbidden);
 
     if (!assignments) {
         alert("No se pudo armar un sorteo sin repetir años anteriores con estas personas. Desmarca «No repetir» o agrega más integrantes.");
