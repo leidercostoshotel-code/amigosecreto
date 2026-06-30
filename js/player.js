@@ -1,26 +1,24 @@
-// player.js — Vista del jugador: elegir nombre, validar PIN y revelar su amigo secreto.
+// player.js — Vista del jugador: amigo secreto (PIN + revelado) y listas de deseos.
 import { isConfigured, loadFirebase } from "./firebase-config.js";
 import {
     initials, colorFor, randomPhrase, isValidPin,
-    hashPin, verifyPin, randomSaltHex, SUSPENSE_MESSAGES
+    hashPin, verifyPin, randomSaltHex, normalizeName, SUSPENSE_MESSAGES
 } from "./core.js";
 
 const $ = (id) => document.getElementById(id);
 
-const steps = {
-    loading: $("stateLoading"),
-    config: $("stateConfig"),
-    code: $("stateCode"),
-    notFound: $("stateNotFound"),
-    waiting: $("stateWaiting"),
-    pick: $("statePick")
-};
-function showStep(name) {
-    Object.values(steps).forEach((el) => el.classList.remove("is-active"));
-    steps[name].classList.add("is-active");
+function showScreen(id) {
+    document.querySelectorAll(".screen").forEach((el) => el.classList.remove("is-active"));
+    if (id) $(id).classList.add("is-active");
+}
+function showPublic(id) {
+    $("tabs").hidden = true;
+    $("viewReveal").hidden = true;
+    $("viewWishlists").hidden = true;
+    showScreen(id);
 }
 
-// --- Helpers de URL ---
+// --- URL ---
 function getGameCode() {
     const code = new URLSearchParams(location.search).get("game");
     return code ? code.trim().toUpperCase() : "";
@@ -29,27 +27,20 @@ function goToGame(code) {
     location.href = location.pathname + "?game=" + encodeURIComponent(code.trim().toUpperCase());
 }
 
-// --- Estado en memoria ---
-let fb = null;        // bundle de Firebase
+// --- Estado ---
+let fb = null;
 let gameCode = "";
-let players = [];     // [{ id, name, receiver, revealed, pinHash, pinSalt }]
+let players = [];
+let currentView = "reveal";
 
-// ============================ Arranque ============================
 async function start() {
-    if (!isConfigured()) { showStep("config"); return; }
-
+    if (!isConfigured()) { showPublic("stateConfig"); return; }
     gameCode = getGameCode();
-    if (!gameCode) { setupCodeForm(); showStep("code"); return; }
-
+    if (!gameCode) { setupCodeForm(); showPublic("stateCode"); return; }
     try {
         fb = await loadFirebase();
         await fb.authMod.signInAnonymously(fb.auth);
-    } catch (err) {
-        console.error(err);
-        showStep("config");
-        return;
-    }
-
+    } catch (err) { console.error(err); showPublic("stateConfig"); return; }
     await loadGame();
 }
 
@@ -65,72 +56,95 @@ function setupCodeForm() {
 
 async function loadGame() {
     const { fsMod, db } = fb;
-    const gameRef = fsMod.doc(db, "games", gameCode);
     let snap;
-    try {
-        snap = await fsMod.getDoc(gameRef);
-    } catch (err) {
-        console.error(err);
-        showStep("notFound");
-        return;
-    }
-    if (!snap.exists()) { showStep("notFound"); return; }
+    try { snap = await fsMod.getDoc(fsMod.doc(db, "games", gameCode)); }
+    catch (err) { console.error(err); showPublic("stateNotFound"); return; }
+    if (!snap.exists()) { showPublic("stateNotFound"); return; }
 
     const game = snap.data();
     $("gameTitle").textContent = game.title || "Amigo Secreto";
+    if (game.status !== "drawn") { showPublic("stateWaiting"); return; }
 
-    if (game.status !== "drawn") { showStep("waiting"); return; }
-
-    // Escuchar la lista de jugadores en tiempo real (estado "ya visto").
-    const playersRef = fsMod.collection(db, "games", gameCode, "players");
-    const q = fsMod.query(playersRef, fsMod.orderBy("order"));
+    const q = fsMod.query(fsMod.collection(db, "games", gameCode, "players"), fsMod.orderBy("order"));
     fsMod.onSnapshot(q, (qs) => {
         players = qs.docs.map((d) => ({ id: d.id, ...d.data() }));
-        renderNames();
-        showStep("pick");
-    }, (err) => { console.error(err); showStep("notFound"); });
+        $("tabs").hidden = false;
+        $("viewReveal").hidden = currentView !== "reveal";
+        $("viewWishlists").hidden = currentView !== "wishlists";
+        if (currentView === "reveal") renderReveal(); else renderWishlists();
+    }, (err) => { console.error(err); showPublic("stateNotFound"); });
 }
 
-// ============================ Lista de nombres ============================
+// --- Navegación ---
+$("tabs").addEventListener("click", (e) => {
+    const tab = e.target.closest(".tab");
+    if (tab) setView(tab.dataset.view);
+});
+function setView(name) {
+    currentView = name;
+    $("viewReveal").hidden = name !== "reveal";
+    $("viewWishlists").hidden = name !== "wishlists";
+    document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("is-active", t.dataset.view === name));
+    if (name === "reveal") renderReveal(); else renderWishlists();
+}
+
+function playerById(id) { return players.find((p) => p.id === id); }
+
+// --- Vista: mi amigo secreto ---
+function renderReveal() {
+    const total = players.length;
+    const done = players.filter((p) => p.revealed).length;
+    if (total > 0 && done === total) showScreen("revealDone"); else showScreen("statePick");
+    renderNames();
+}
 function renderNames() {
     const grid = $("nameGrid");
     grid.textContent = "";
     players.forEach((p) => {
-        const card = document.createElement("button");
-        card.type = "button";
-        card.className = "name-card" + (p.revealed ? " is-revealed" : "");
-        card.dataset.id = p.id;
-
-        const avatar = document.createElement("span");
-        avatar.className = "name-card__avatar";
-        avatar.style.backgroundColor = colorFor(p.name);
-        avatar.textContent = initials(p.name);
-        avatar.setAttribute("aria-hidden", "true");
-
-        const name = document.createElement("span");
-        name.className = "name-card__name";
-        name.textContent = p.name;
-
-        card.append(avatar, name);
-
-        if (p.revealed) {
-            const badge = document.createElement("span");
-            badge.className = "name-card__badge";
-            badge.textContent = "✓ visto";
-            card.appendChild(badge);
-        }
-
+        const card = nameCard(p, p.revealed ? "✓ visto" : "");
         card.addEventListener("click", () => onPickName(p));
         grid.appendChild(card);
     });
 }
 
-// ============================ Flujo de revelado ============================
+// --- Vista: listas de deseos (tablero) ---
+function renderWishlists() {
+    const grid = $("wishGrid");
+    grid.textContent = "";
+    players.forEach((p) => {
+        const n = (p.wishlist || []).length;
+        const card = nameCard(p, n ? ("🎁 " + n) : "ver");
+        card.addEventListener("click", () => openWishView(p));
+        grid.appendChild(card);
+    });
+}
+
+function nameCard(p, badgeText) {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "name-card" + (p.revealed ? " is-revealed" : "");
+    const avatar = document.createElement("span");
+    avatar.className = "name-card__avatar";
+    avatar.style.backgroundColor = colorFor(p.name);
+    avatar.textContent = initials(p.name);
+    avatar.setAttribute("aria-hidden", "true");
+    const name = document.createElement("span");
+    name.className = "name-card__name";
+    name.textContent = p.name;
+    card.append(avatar, name);
+    if (badgeText) {
+        const badge = document.createElement("span");
+        badge.className = "name-card__badge";
+        badge.textContent = badgeText;
+        card.appendChild(badge);
+    }
+    return card;
+}
+
+// --- Flujo de revelado ---
 async function onPickName(player) {
     const claimed = Boolean(player.pinHash);
-
     if (!claimed) {
-        // Primera vez: crear PIN.
         const pin = await openPinModal({
             title: "Hola, " + player.name,
             note: "Crea un PIN de 4 dígitos. Lo necesitarás si vuelves a abrir tu resultado, y evita que otra persona lo vea.",
@@ -142,46 +156,163 @@ async function onPickName(player) {
             }
         });
         if (pin === null) return;
-
         const salt = randomSaltHex();
         const pinHash = await hashPin(pin, salt);
         try {
-            await fb.fsMod.updateDoc(
-                fb.fsMod.doc(fb.db, "games", gameCode, "players", player.id),
-                { pinHash, pinSalt: salt, revealed: true }
-            );
-        } catch (err) {
-            console.error(err);
-            alert("No se pudo guardar tu PIN. Revisa tu conexión e inténtalo otra vez.");
-            return;
-        }
-        await reveal(player);
+            await fb.fsMod.updateDoc(fb.fsMod.doc(fb.db, "games", gameCode, "players", player.id),
+                { pinHash, pinSalt: salt, revealed: true });
+        } catch (err) { console.error(err); alert("No se pudo guardar tu PIN. Inténtalo otra vez."); return; }
+        await reveal(player.id);
     } else {
-        // Ya reclamado: pedir PIN y verificar.
         const pin = await openPinModal({
             title: player.name,
             note: "Ingresa tu PIN para ver tu amigo secreto.",
             mode: "enter",
             validate: async (p1) => {
                 if (!isValidPin(p1)) return "El PIN debe tener 4 dígitos.";
-                const ok = await verifyPin(p1, player.pinSalt, player.pinHash);
-                return ok ? null : "PIN incorrecto.";
+                return (await verifyPin(p1, player.pinSalt, player.pinHash)) ? null : "PIN incorrecto.";
             }
         });
         if (pin === null) return;
-        await reveal(player);
+        await reveal(player.id);
     }
 }
 
-async function reveal(player) {
+let revealedId = null;
+async function reveal(playerId) {
+    revealedId = playerId;
     await runSuspense();
-    $("giverLabel").textContent = player.name;
-    $("secretName").textContent = player.receiver || "—";
+    const me = playerById(playerId);
+    const receiver = playerById(me.receiverId);
+    $("giverLabel").textContent = me.name;
+    $("secretName").textContent = me.receiver || (receiver && receiver.name) || "—";
     $("funnyPhrase").textContent = randomPhrase();
+    renderRevealWishlist(receiver);
     openOverlay("revealOverlay");
     $("closeRevealBtn").focus();
     launchConfetti();
 }
+function renderRevealWishlist(receiver) {
+    const box = $("revealWishlist");
+    box.textContent = "";
+    const title = document.createElement("div");
+    title.className = "wishbox__title";
+    title.textContent = "🎁 La lista de deseos de " + (receiver ? receiver.name : "tu amigo") + ":";
+    box.appendChild(title);
+    box.appendChild(deseosList(receiver && receiver.wishlist, "Aún no agregó nada a su lista."));
+}
+
+$("editMyWishBtn").addEventListener("click", () => {
+    if (revealedId) openWishEdit(playerById(revealedId));
+});
+
+// --- Ver lista de deseos (solo lectura) ---
+function openWishView(player) {
+    $("wishViewTitle").textContent = "Lista de " + player.name;
+    const av = $("wishViewAvatar");
+    av.textContent = initials(player.name);
+    av.style.backgroundColor = colorFor(player.name);
+    const list = $("wishViewList");
+    list.textContent = "";
+    list.appendChild(deseosList(player.wishlist, "Esta persona aún no agregó su lista de deseos."));
+    openOverlay("wishViewModal");
+    $("wishViewClose").focus();
+}
+$("wishViewClose").addEventListener("click", () => closeOverlay("wishViewModal"));
+
+function deseosList(items, emptyMsg) {
+    const frag = document.createDocumentFragment();
+    const arr = items || [];
+    if (arr.length === 0) {
+        const empty = document.createElement("li");
+        empty.className = "deseos__empty";
+        empty.textContent = emptyMsg;
+        frag.appendChild(empty);
+        return frag;
+    }
+    arr.forEach((text) => {
+        const li = document.createElement("li");
+        li.className = "deseo";
+        const icon = document.createElement("span");
+        icon.className = "deseo__icon"; icon.textContent = "🎁"; icon.setAttribute("aria-hidden", "true");
+        const t = document.createElement("span");
+        t.className = "deseo__text"; t.textContent = text;
+        li.append(icon, t);
+        frag.appendChild(li);
+    });
+    return frag;
+}
+
+// --- Editar mi lista de deseos ---
+let editPlayerId = null;
+let editItems = [];
+function openWishEdit(player) {
+    editPlayerId = player.id;
+    editItems = (player.wishlist || []).slice();
+    $("wishEditTitle").textContent = "Tu lista de deseos, " + player.name;
+    $("wishInput").value = "";
+    $("wishFeedback").textContent = "";
+    renderEditItems();
+    openOverlay("wishEditModal");
+    setTimeout(() => $("wishInput").focus(), 50);
+}
+function renderEditItems() {
+    const list = $("wishEditList");
+    list.textContent = "";
+    if (editItems.length === 0) {
+        const empty = document.createElement("li");
+        empty.className = "deseos__empty";
+        empty.textContent = "Aún no agregaste nada. Escribe un regalo y pulsa Agregar.";
+        list.appendChild(empty);
+        return;
+    }
+    editItems.forEach((text, i) => {
+        const li = document.createElement("li");
+        li.className = "deseo";
+        const icon = document.createElement("span");
+        icon.className = "deseo__icon"; icon.textContent = "🎁"; icon.setAttribute("aria-hidden", "true");
+        const t = document.createElement("span");
+        t.className = "deseo__text"; t.textContent = text;
+        const rm = document.createElement("button");
+        rm.className = "deseo__remove"; rm.type = "button"; rm.textContent = "✕";
+        rm.setAttribute("aria-label", "Quitar");
+        rm.addEventListener("click", () => { editItems.splice(i, 1); renderEditItems(); });
+        li.append(icon, t, rm);
+        list.appendChild(li);
+    });
+}
+function addWishItem() {
+    const text = normalizeName($("wishInput").value);
+    if (!text) { $("wishFeedback").textContent = "Escribe un regalo."; return; }
+    if (editItems.length >= 20) { $("wishFeedback").textContent = "Máximo 20 deseos."; return; }
+    editItems.push(text);
+    $("wishInput").value = "";
+    $("wishFeedback").textContent = "";
+    renderEditItems();
+    $("wishInput").focus();
+}
+$("wishAddBtn").addEventListener("click", addWishItem);
+$("wishInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addWishItem(); } });
+$("wishSaveBtn").addEventListener("click", async () => {
+    if (!editPlayerId) return;
+    try {
+        await fb.fsMod.updateDoc(fb.fsMod.doc(fb.db, "games", gameCode, "players", editPlayerId),
+            { wishlist: editItems });
+        closeOverlay("wishEditModal");
+    } catch (err) { console.error(err); $("wishFeedback").textContent = "No se pudo guardar. Revisa tu conexión."; }
+});
+$("wishEditClose").addEventListener("click", () => closeOverlay("wishEditModal"));
+
+// --- Overlays / suspenso / confetti / PIN (reutilizados) ---
+function openOverlay(id) { const el = $(id); el.classList.add("is-open"); el.setAttribute("aria-hidden", "false"); }
+function closeOverlay(id) { const el = $(id); el.classList.remove("is-open"); el.setAttribute("aria-hidden", "true"); }
+
+$("closeRevealBtn").addEventListener("click", () => {
+    closeOverlay("revealOverlay");
+    document.querySelectorAll(".confetti-piece").forEach((el) => el.remove());
+});
+$("tryAnotherBtn").addEventListener("click", () => goToGame(""));
+$("reloadBtn").addEventListener("click", () => location.reload());
 
 function runSuspense() {
     return new Promise((resolve) => {
@@ -195,18 +326,6 @@ function runSuspense() {
     });
 }
 
-// ============================ Overlays ============================
-function openOverlay(id) { const el = $(id); el.classList.add("is-open"); el.setAttribute("aria-hidden", "false"); }
-function closeOverlay(id) { const el = $(id); el.classList.remove("is-open"); el.setAttribute("aria-hidden", "true"); }
-
-$("closeRevealBtn").addEventListener("click", () => {
-    closeOverlay("revealOverlay");
-    document.querySelectorAll(".confetti-piece").forEach((el) => el.remove());
-});
-$("tryAnotherBtn").addEventListener("click", () => goToGame(""));
-$("reloadBtn").addEventListener("click", () => location.reload());
-
-// ============================ Modal de PIN (promesa) ============================
 let pinResolver = null;
 function openPinModal(opts) {
     return new Promise((resolve) => {
@@ -215,23 +334,18 @@ function openPinModal(opts) {
         $("pinNote").textContent = opts.note;
         $("pin2Field").hidden = opts.mode !== "create";
         $("pin1Label").textContent = opts.mode === "create" ? "PIN (4 dígitos)" : "Tu PIN";
-        $("pin1").value = "";
-        $("pin2").value = "";
+        $("pin1").value = ""; $("pin2").value = "";
         $("pinFeedback").textContent = "";
         openOverlay("pinModal");
         setTimeout(() => $("pin1").focus(), 50);
 
         const confirm = async () => {
-            const p1 = $("pin1").value.trim();
-            const p2 = $("pin2").value.trim();
-            const error = await opts.validate(p1, p2);
+            const error = await opts.validate($("pin1").value.trim(), $("pin2").value.trim());
             if (error) { $("pinFeedback").textContent = error; return; }
-            cleanup();
-            resolve(p1);
+            cleanup(); resolve($("pin1").value.trim());
         };
         const cancel = () => { cleanup(); resolve(null); };
         const onKey = (e) => { if (e.key === "Enter") confirm(); if (e.key === "Escape") cancel(); };
-
         function cleanup() {
             closeOverlay("pinModal");
             $("pinConfirmBtn").removeEventListener("click", confirm);
@@ -245,8 +359,7 @@ function openPinModal(opts) {
     });
 }
 
-// ============================ Confetti ============================
-const CONFETTI_COLORS = ["#6366f1", "#f59e0b", "#ec4899", "#14b8a6", "#8b5cf6", "#ef4444"];
+const CONFETTI_COLORS = ["#0ea5e9", "#f59e0b", "#38bdf8", "#22d3ee", "#fbbf24", "#0284c7"];
 function launchConfetti() {
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     for (let i = 0; i < 70; i++) {
@@ -260,5 +373,16 @@ function launchConfetti() {
         setTimeout(() => piece.remove(), 6000);
     }
 }
+
+// Cerrar modales con clic en el fondo / Escape
+["revealOverlay", "wishViewModal", "wishEditModal"].forEach((id) => {
+    $(id).addEventListener("click", (e) => { if (e.target === $(id)) closeOverlay(id); });
+});
+document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    ["wishEditModal", "wishViewModal", "revealOverlay"].forEach((id) => {
+        if ($(id).classList.contains("is-open")) closeOverlay(id);
+    });
+});
 
 start();

@@ -23,23 +23,26 @@
             <p class="app__subtitle">Elige tu nombre y descubre a quién le regalas.</p>
         </header>
 
+        <nav class="tabs" id="tabs" hidden>
+            <button class="tab is-active" type="button" data-view="reveal">🎁 Mi amigo secreto</button>
+            <button class="tab" type="button" data-view="wishlists">📝 Listas de deseos</button>
+        </nav>
+
         <div class="app__body">
-            <!-- Cargando -->
-            <section class="step is-active" id="stateLoading">
+            <!-- Pantallas a página completa -->
+            <section class="screen is-active" id="stateLoading">
                 <div class="loading"><div class="spinner"></div><p style="margin-top:14px;">Conectando…</p></div>
             </section>
 
-            <!-- Falta configurar Firebase -->
-            <section class="step" id="stateConfig">
+            <section class="screen" id="stateConfig">
                 <div class="state">
                     <div class="state__emoji">⚙️</div>
                     <h2>Falta configurar el proyecto</h2>
-                    <p>Edita <code>js/firebase-config.js</code> con los datos de tu proyecto de Firebase. Sigue los pasos del <code>README.md</code>.</p>
+                    <p>Edita <code>js/firebase-config.js</code> con los datos de tu proyecto de Firebase.</p>
                 </div>
             </section>
 
-            <!-- Pedir código de juego -->
-            <section class="step" id="stateCode">
+            <section class="screen" id="stateCode">
                 <h2 class="section-title">Ingresa el código del juego</h2>
                 <p class="hint" style="margin:0 0 14px;">Pídele al organizador el código (o el enlace) del sorteo.</p>
                 <label class="field-label" for="codeInput">Código</label>
@@ -51,8 +54,7 @@
                 <p class="feedback" id="codeFeedback" role="alert" aria-live="assertive"></p>
             </section>
 
-            <!-- Juego no encontrado -->
-            <section class="step" id="stateNotFound">
+            <section class="screen" id="stateNotFound">
                 <div class="state">
                     <div class="state__emoji">🔍</div>
                     <h2>No encontramos ese sorteo</h2>
@@ -61,8 +63,7 @@
                 <div class="actions"><button class="btn btn--ghost btn--block" id="tryAnotherBtn" type="button">Probar otro código</button></div>
             </section>
 
-            <!-- Sorteo aún no listo -->
-            <section class="step" id="stateWaiting">
+            <section class="screen" id="stateWaiting">
                 <div class="state">
                     <div class="state__emoji">⏳</div>
                     <h2>El sorteo todavía no está listo</h2>
@@ -71,12 +72,29 @@
                 <div class="actions"><button class="btn btn--ghost btn--block" id="reloadBtn" type="button">Actualizar</button></div>
             </section>
 
-            <!-- Elegir nombre -->
-            <section class="step" id="statePick">
-                <h2 class="section-title">¿Quién eres?</h2>
-                <p class="hint" style="margin:0 0 16px;">Toca tu nombre. La primera vez crearás un PIN para que nadie más vea tu resultado.</p>
-                <div class="name-grid" id="nameGrid"></div>
-            </section>
+            <!-- VISTA: mi amigo secreto -->
+            <div class="view" id="viewReveal" hidden>
+                <section class="screen" id="statePick">
+                    <h2 class="section-title">¿Quién eres?</h2>
+                    <p class="hint" style="margin:0 0 16px;">Toca tu nombre. La primera vez crearás un PIN para que nadie más vea tu resultado.</p>
+                    <div class="name-grid" id="nameGrid"></div>
+                </section>
+
+                <section class="screen" id="revealDone">
+                    <div class="state">
+                        <div class="state__emoji">🎉</div>
+                        <h2>¡Todos ya saben a quién regalar!</h2>
+                        <p>Pásate a <strong>📝 Listas de deseos</strong> para ver qué le gustaría a cada quien.</p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- VISTA: listas de deseos (tablero público) -->
+            <div class="view" id="viewWishlists" hidden>
+                <h2 class="section-title">Listas de deseos</h2>
+                <p class="hint" style="margin:0 0 16px;">Toca a una persona para ver qué le gustaría. Para editar la tuya, entra por <strong>🎁 Mi amigo secreto</strong>, toca tu nombre y luego «Editar mi lista».</p>
+                <div class="name-grid" id="wishGrid"></div>
+            </div>
         </div>
 
         <p class="footnote">Tu resultado es solo tuyo · protegido con tu PIN</p>
@@ -96,7 +114,9 @@
             <p class="reveal__eyebrow" id="revealCardTitle"><strong id="giverLabel"></strong>, le regalas a…</p>
             <div class="reveal__name" id="secretName">—</div>
             <p class="reveal__phrase" id="funnyPhrase"></p>
-            <button class="btn btn--primary btn--block" id="closeRevealBtn" type="button">Entendido, ocultar</button>
+            <div class="wishbox" id="revealWishlist"></div>
+            <button class="btn btn--accent btn--block" id="editMyWishBtn" type="button">📝 Editar mi lista de deseos</button>
+            <button class="btn btn--primary btn--block" id="closeRevealBtn" type="button" style="margin-top:10px;">Entendido, ocultar</button>
         </div>
     </div>
 
@@ -117,6 +137,36 @@
             <div class="actions" style="margin-top:8px;">
                 <button class="btn btn--primary btn--block" id="pinConfirmBtn" type="button">Continuar</button>
                 <button class="btn btn--ghost btn--block" id="pinCancelBtn" type="button">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ver lista de deseos (solo lectura) -->
+    <div class="overlay modal" id="wishViewModal" role="dialog" aria-modal="true" aria-labelledby="wishViewTitle" aria-hidden="true">
+        <div class="modal__card">
+            <div class="wish-head">
+                <div class="wish-head__avatar" id="wishViewAvatar" aria-hidden="true"></div>
+                <h2 class="modal__title" id="wishViewTitle" style="margin:0;">Lista de deseos</h2>
+            </div>
+            <ul class="deseos" id="wishViewList"></ul>
+            <button class="btn btn--ghost btn--block" id="wishViewClose" type="button" style="margin-top:16px;">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- Editar mi lista de deseos -->
+    <div class="overlay modal" id="wishEditModal" role="dialog" aria-modal="true" aria-labelledby="wishEditTitle" aria-hidden="true">
+        <div class="modal__card">
+            <h2 class="modal__title" id="wishEditTitle">Tu lista de deseos</h2>
+            <p class="modal__note">Agrega los regalos que te gustaría recibir. Lo verá quien te regale (y el resto en el tablero).</p>
+            <div class="add-row">
+                <input class="input" type="text" id="wishInput" maxlength="120" autocomplete="off" placeholder="Ej. Audífonos bluetooth, talla M…">
+                <button class="btn btn--primary" id="wishAddBtn" type="button">+ Agregar</button>
+            </div>
+            <p class="feedback" id="wishFeedback" role="alert" aria-live="assertive"></p>
+            <ul class="deseos" id="wishEditList" style="margin-top:14px;"></ul>
+            <div class="actions" style="margin-top:14px;">
+                <button class="btn btn--accent btn--block" id="wishSaveBtn" type="button">Guardar mi lista</button>
+                <button class="btn btn--ghost btn--block" id="wishEditClose" type="button">Cerrar</button>
             </div>
         </div>
     </div>
