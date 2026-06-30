@@ -118,6 +118,58 @@ export function assignWithExclusions(participants, forbidden) {
     return null;
 }
 
+// Derangement de UN SOLO CICLO con exclusiones (una sola cadena:
+// p0 → p1 → … → p_{n-1} → p0). Al ser un único ciclo NO hay parejas
+// recíprocas (A↔B) ni grupitos cerrados, y respeta las exclusiones del
+// historial. Devuelve [{giverId,giver,receiverId,receiver}] o null si no
+// existe esa cadena con las restricciones dadas.
+export function buildCycleExcluding(participants, forbidden) {
+    const n = participants.length;
+    if (n < 2) return null;
+    const ids = participants.map((p) => p.id);
+    const nameById = {};
+    const forb = {};
+    participants.forEach((p) => {
+        nameById[p.id] = p.name;
+        forb[p.id] = new Set(forbidden && forbidden[p.id] ? forbidden[p.id] : []);
+        forb[p.id].add(p.id);
+    });
+
+    for (let attempt = 0; attempt < 200; attempt++) {
+        const start = ids[secureRandomInt(n)];
+        const path = [start];
+        const used = new Set([start]);
+
+        const extend = () => {
+            if (path.length === n) {
+                // Cerrar la cadena: el último debe poder regalar al primero.
+                return !forb[path[n - 1]].has(start);
+            }
+            const cur = path[path.length - 1];
+            const candidates = shuffle(ids).filter((x) => !used.has(x) && !forb[cur].has(x));
+            for (const x of candidates) {
+                path.push(x);
+                used.add(x);
+                if (extend()) return true;
+                path.pop();
+                used.delete(x);
+            }
+            return false;
+        };
+
+        if (extend()) {
+            const out = [];
+            for (let i = 0; i < n; i++) {
+                const g = path[i];
+                const r = path[(i + 1) % n];
+                out.push({ giverId: g, giver: nameById[g], receiverId: r, receiver: nameById[r] });
+            }
+            return out;
+        }
+    }
+    return null;
+}
+
 // --- Validación de nombres ---
 export function normalizeName(raw) {
     return String(raw == null ? "" : raw).replace(/\s+/g, " ").trim();
