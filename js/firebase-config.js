@@ -7,12 +7,12 @@
 // ============================================================================
 
 export const firebaseConfig = {
-    apiKey: "TU_API_KEY",
-    authDomain: "TU_PROYECTO.firebaseapp.com",
-    projectId: "TU_PROYECTO",
-    storageBucket: "TU_PROYECTO.appspot.com",
-    messagingSenderId: "TU_SENDER_ID",
-    appId: "TU_APP_ID"
+    apiKey: "AIzaSyB_quOiCPiJSzb53PEJZ29QrKsmC80AZdA",
+    authDomain: "amigo-secreto-73a5f.firebaseapp.com",
+    projectId: "amigo-secreto-73a5f",
+    storageBucket: "amigo-secreto-73a5f.firebasestorage.app",
+    messagingSenderId: "220958069276",
+    appId: "1:220958069276:web:41dceee573928d957305d9"
 };
 
 // Versión del SDK modular de Firebase servido desde el CDN de Google.
