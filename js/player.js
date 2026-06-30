@@ -100,6 +100,7 @@ function renderReveal() {
 function renderNames() {
     const grid = $("nameGrid");
     grid.textContent = "";
+    if (players.length === 0) { grid.appendChild(emptyBoardMsg()); return; }
     players.forEach((p) => {
         const card = nameCard(p, p.revealed ? "✓ visto" : "");
         card.addEventListener("click", () => onPickName(p));
@@ -107,10 +108,19 @@ function renderNames() {
     });
 }
 
+function emptyBoardMsg() {
+    const div = document.createElement("div");
+    div.className = "deseos__empty";
+    div.style.gridColumn = "1 / -1";
+    div.innerHTML = "Este sorteo todavía no tiene participantes. El organizador debe agregarlos y sortear desde el <a href=\"admin.html\">panel</a>.";
+    return div;
+}
+
 // --- Vista: listas de deseos (tablero) ---
 function renderWishlists() {
     const grid = $("wishGrid");
     grid.textContent = "";
+    if (players.length === 0) { grid.appendChild(emptyBoardMsg()); return; }
     players.forEach((p) => {
         const n = (p.wishlist || []).length;
         const card = nameCard(p, n ? ("🎁 " + n) : "ver");
@@ -141,13 +151,13 @@ function nameCard(p, badgeText) {
     return card;
 }
 
-// --- Flujo de revelado ---
-async function onPickName(player) {
+// --- Verificación de identidad con PIN (crear la primera vez o ingresar) ---
+async function verifyPlayer(player, note) {
     const claimed = Boolean(player.pinHash);
     if (!claimed) {
         const pin = await openPinModal({
             title: "Hola, " + player.name,
-            note: "Crea un PIN de 4 dígitos. Lo necesitarás si vuelves a abrir tu resultado, y evita que otra persona lo vea.",
+            note: note || "Crea un PIN de 4 dígitos. Lo necesitarás para volver a entrar y evita que otra persona toque tu nombre.",
             mode: "create",
             validate: async (p1, p2) => {
                 if (!isValidPin(p1)) return "El PIN debe tener 4 dígitos.";
@@ -155,27 +165,29 @@ async function onPickName(player) {
                 return null;
             }
         });
-        if (pin === null) return;
+        if (pin === null) return false;
         const salt = randomSaltHex();
         const pinHash = await hashPin(pin, salt);
         try {
             await fb.fsMod.updateDoc(fb.fsMod.doc(fb.db, "games", gameCode, "players", player.id),
                 { pinHash, pinSalt: salt, revealed: true });
-        } catch (err) { console.error(err); alert("No se pudo guardar tu PIN. Inténtalo otra vez."); return; }
-        await reveal(player.id);
-    } else {
-        const pin = await openPinModal({
-            title: player.name,
-            note: "Ingresa tu PIN para ver tu amigo secreto.",
-            mode: "enter",
-            validate: async (p1) => {
-                if (!isValidPin(p1)) return "El PIN debe tener 4 dígitos.";
-                return (await verifyPin(p1, player.pinSalt, player.pinHash)) ? null : "PIN incorrecto.";
-            }
-        });
-        if (pin === null) return;
-        await reveal(player.id);
+        } catch (err) { console.error(err); alert("No se pudo guardar tu PIN. Inténtalo otra vez."); return false; }
+        return true;
     }
+    const pin = await openPinModal({
+        title: player.name,
+        note: note || "Ingresa tu PIN.",
+        mode: "enter",
+        validate: async (p1) => {
+            if (!isValidPin(p1)) return "El PIN debe tener 4 dígitos.";
+            return (await verifyPin(p1, player.pinSalt, player.pinHash)) ? null : "PIN incorrecto.";
+        }
+    });
+    return pin !== null;
+}
+
+async function onPickName(player) {
+    if (await verifyPlayer(player, "Ingresa tu PIN para ver tu amigo secreto.")) await reveal(player.id);
 }
 
 let revealedId = null;
@@ -207,7 +219,9 @@ $("editMyWishBtn").addEventListener("click", () => {
 });
 
 // --- Ver lista de deseos (solo lectura) ---
+let viewedId = null;
 function openWishView(player) {
+    viewedId = player.id;
     $("wishViewTitle").textContent = "Lista de " + player.name;
     const av = $("wishViewAvatar");
     av.textContent = initials(player.name);
@@ -219,6 +233,16 @@ function openWishView(player) {
     $("wishViewClose").focus();
 }
 $("wishViewClose").addEventListener("click", () => closeOverlay("wishViewModal"));
+
+// "Es mi lista, editar": pide el PIN del dueño y abre el editor.
+$("wishEditFromView").addEventListener("click", async () => {
+    const player = playerById(viewedId);
+    if (!player) return;
+    closeOverlay("wishViewModal");
+    if (await verifyPlayer(player, "Ingresa tu PIN para editar tu lista.")) {
+        openWishEdit(playerById(player.id) || player);
+    }
+});
 
 function deseosList(items, emptyMsg) {
     const frag = document.createDocumentFragment();
@@ -313,6 +337,7 @@ $("closeRevealBtn").addEventListener("click", () => {
 });
 $("tryAnotherBtn").addEventListener("click", () => goToGame(""));
 $("reloadBtn").addEventListener("click", () => location.reload());
+$("changeCodeLink").addEventListener("click", (e) => { e.preventDefault(); goToGame(""); });
 
 function runSuspense() {
     return new Promise((resolve) => {

@@ -92,12 +92,15 @@
             <!-- VISTA: listas de deseos (tablero público) -->
             <div class="view" id="viewWishlists" hidden>
                 <h2 class="section-title">Listas de deseos</h2>
-                <p class="hint" style="margin:0 0 16px;">Toca a una persona para ver qué le gustaría. Para editar la tuya, entra por <strong>🎁 Mi amigo secreto</strong>, toca tu nombre y luego «Editar mi lista».</p>
+                <p class="hint" style="margin:0 0 16px;">Toca a una persona para ver su lista. Para poner la tuya, toca <strong>tu nombre</strong> y pulsa <strong>«✏️ Es mi lista, editar»</strong> (te pedirá tu PIN).</p>
                 <div class="name-grid" id="wishGrid"></div>
             </div>
         </div>
 
-        <p class="footnote">Tu resultado es solo tuyo · protegido con tu PIN</p>
+        <p class="footnote">
+            Tu resultado es solo tuyo · protegido con tu PIN<br>
+            <a href="#" id="changeCodeLink">Cambiar código</a> · <a href="admin.html">Panel del organizador →</a>
+        </p>
     </main>
 
     <!-- Suspenso (chocolateo) -->
@@ -149,7 +152,10 @@
                 <h2 class="modal__title" id="wishViewTitle" style="margin:0;">Lista de deseos</h2>
             </div>
             <ul class="deseos" id="wishViewList"></ul>
-            <button class="btn btn--ghost btn--block" id="wishViewClose" type="button" style="margin-top:16px;">Cerrar</button>
+            <div class="actions" style="margin-top:16px;">
+                <button class="btn btn--accent btn--block" id="wishEditFromView" type="button">✏️ Es mi lista, editar</button>
+                <button class="btn btn--ghost btn--block" id="wishViewClose" type="button">Cerrar</button>
+            </div>
         </div>
     </div>
 
