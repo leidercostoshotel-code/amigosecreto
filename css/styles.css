@@ -1,30 +1,32 @@
 :root {
-    --bg-1: #1e1b4b;
-    --bg-2: #312e81;
-    --bg-3: #4c1d95;
-    --primary: #6366f1;
-    --primary-strong: #4f46e5;
+    /* Tema "Azul océano" */
+    --bg-1: #0c4a6e;
+    --bg-2: #075985;
+    --bg-3: #0e7490;
+    --primary: #0ea5e9;
+    --primary-strong: #0284c7;
     --accent: #f59e0b;
     --accent-strong: #d97706;
     --danger: #ef4444;
     --danger-strong: #dc2626;
     --ok: #10b981;
     --surface: #ffffff;
-    --surface-soft: #f5f5fb;
-    --surface-line: #e6e6f0;
-    --text: #1f2433;
-    --text-soft: #5b6072;
-    --text-muted: #8a8fa3;
+    --surface-soft: #f1f6fb;
+    --surface-line: #dde7f0;
+    --text: #11202b;
+    --text-soft: #4a5b68;
+    --text-muted: #7d8b97;
     --radius-lg: 24px;
     --radius-md: 14px;
     --radius-sm: 10px;
-    --shadow-card: 0 24px 60px -20px rgba(30, 27, 75, 0.55);
-    --shadow-soft: 0 6px 20px -8px rgba(30, 27, 75, 0.35);
-    --ring: 0 0 0 4px rgba(99, 102, 241, 0.28);
+    --shadow-card: 0 24px 60px -20px rgba(8, 47, 73, 0.55);
+    --shadow-soft: 0 6px 20px -8px rgba(8, 47, 73, 0.35);
+    --ring: 0 0 0 4px rgba(14, 165, 233, 0.3);
     --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 html, body { height: 100%; }
 
 body {
@@ -32,15 +34,23 @@ body {
     color: var(--text);
     background:
         radial-gradient(1200px 600px at 15% -10%, rgba(245, 158, 11, 0.18), transparent 60%),
-        radial-gradient(1000px 700px at 110% 10%, rgba(99, 102, 241, 0.25), transparent 55%),
+        radial-gradient(1000px 700px at 110% 10%, rgba(14, 165, 233, 0.28), transparent 55%),
         linear-gradient(155deg, var(--bg-1) 0%, var(--bg-2) 45%, var(--bg-3) 100%);
+    background-attachment: fixed;
     min-height: 100dvh;
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding: clamp(16px, 4vw, 48px) 16px;
+    /* Respeta el notch / barra de gestos en iOS y Android */
+    padding:
+        max(clamp(16px, 4vw, 48px), env(safe-area-inset-top))
+        max(16px, env(safe-area-inset-right))
+        max(clamp(16px, 4vw, 48px), env(safe-area-inset-bottom))
+        max(16px, env(safe-area-inset-left));
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
 }
 
 .app {
@@ -136,7 +146,7 @@ body {
 .btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn--primary { background: linear-gradient(135deg, var(--primary), var(--primary-strong)); color: #fff; box-shadow: var(--shadow-soft); }
-.btn--primary:not(:disabled):hover { box-shadow: 0 12px 28px -10px rgba(79, 70, 229, 0.7); }
+.btn--primary:not(:disabled):hover { box-shadow: 0 12px 28px -10px rgba(2, 132, 199, 0.7); }
 .btn--accent { background: linear-gradient(135deg, var(--accent), var(--accent-strong)); color: #fff; box-shadow: var(--shadow-soft); }
 .btn--accent:not(:disabled):hover { box-shadow: 0 12px 28px -10px rgba(217, 119, 6, 0.7); }
 .btn--ghost { background: var(--surface-soft); color: var(--text-soft); }
@@ -159,7 +169,7 @@ body {
 /* Counts / lists */
 .list-head { display: flex; align-items: baseline; justify-content: space-between; margin: 26px 0 12px; }
 .list-head h2 { font-size: 1rem; color: var(--text); }
-.count-pill { font-size: 0.78rem; font-weight: 700; color: var(--primary-strong); background: rgba(99, 102, 241, 0.12); padding: 4px 12px; border-radius: 999px; }
+.count-pill { font-size: 0.78rem; font-weight: 700; color: var(--primary-strong); background: rgba(14, 165, 233, 0.12); padding: 4px 12px; border-radius: 999px; }
 
 .participants { list-style: none; display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; margin: 0 -4px; padding: 0 4px 2px; }
 .participants__empty { text-align: center; color: var(--text-muted); font-size: 0.9rem; padding: 28px 12px; border: 2px dashed var(--surface-line); border-radius: var(--radius-md); }
@@ -229,7 +239,7 @@ body {
 @keyframes blink { 0%,100%{ opacity: 0.3; transform: scale(0.8);} 50%{ opacity: 1; transform: scale(1);} }
 
 .reveal { background: rgba(15, 13, 40, 0.72); backdrop-filter: blur(6px); z-index: 1200; }
-.reveal__card { background: var(--surface); border-radius: var(--radius-lg); padding: clamp(28px, 7vw, 44px); text-align: center; max-width: 440px; width: 100%; box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6); animation: pop 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28) both; }
+.reveal__card { background: var(--surface); border-radius: var(--radius-lg); padding: clamp(28px, 7vw, 44px); text-align: center; max-width: 440px; width: 100%; max-height: 90dvh; overflow-y: auto; box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6); animation: pop 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28) both; }
 @keyframes pop { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .reveal__gift { font-size: 3rem; }
 .reveal__eyebrow { color: var(--text-soft); font-size: 0.92rem; margin: 14px 0 4px; }
