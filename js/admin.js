@@ -55,7 +55,7 @@ async function start() {
 function teardown() {
     [unsubPeople, unsubGames, unsubPlayers].forEach((u) => u && u());
     unsubPeople = unsubGames = unsubPlayers = playersSubId = null;
-    people = []; games = []; currentGameId = null; game = null; lastPlayers = [];
+    people = []; games = []; currentGameId = null; game = null; lastPlayers = []; peek = false;
 }
 
 function initAfterLogin() {
@@ -207,11 +207,15 @@ async function deletePerson(p) {
 function gameRef(id) { return fb.fsMod.doc(fb.db, "games", id || currentGameId); }
 function playersColl(id) { return fb.fsMod.collection(fb.db, "games", id || currentGameId, "players"); }
 
+// Cambia el sorteo actual; reinicia el spoiler para no mostrar asignaciones
+// ocultas de otro sorteo sin que el admin lo confirme.
+function setCurrent(id) { if (id !== currentGameId) { currentGameId = id; peek = false; } }
+
 function onGamesUpdate() {
     if (!forceCreate) {
         const draws = games.filter((g) => g.kind !== "manual").sort((a, b) => millis(b.createdAt) - millis(a.createdAt));
         if (!currentGameId || !games.some((g) => g.id === currentGameId)) {
-            currentGameId = draws.length ? draws[0].id : null;
+            setCurrent(draws.length ? draws[0].id : null);
         }
     }
     game = games.find((g) => g.id === currentGameId) || null;
@@ -239,7 +243,11 @@ async function createGame() {
         });
         $("gameTitleInput").value = "";
         forceCreate = false;
-        currentGameId = code;
+        setCurrent(code);
+        // Copia local optimista: evita renderizar con el 'game' anterior mientras
+        // llega el snapshot (parpadeo de la pantalla de "sorteo hecho").
+        game = { id: code, adminUid: uid, title, status: "setup", kind: "draw", participants: [], hideAssignments: false };
+        lastPlayers = [];
         setView("draw");
     } catch (err) { console.error(err); flash($("createFeedback"), "No se pudo crear el sorteo."); }
 }
@@ -383,7 +391,7 @@ async function deleteCurrentGame() {
     const id = currentGameId;
     try {
         await deleteGameById(id);
-        forceCreate = false; currentGameId = null;
+        forceCreate = false; setCurrent(null);
         onGamesUpdate();
     } catch (err) { console.error(err); alert("No se pudo eliminar."); }
 }
@@ -566,7 +574,7 @@ async function deleteFromHistory(g) {
     if (!confirm("¿Eliminar «" + (g.title || "sorteo") + "» del historial? Esto puede afectar la regla de no repetir.")) return;
     try {
         await deleteGameById(g.id);
-        if (g.id === currentGameId) { currentGameId = null; forceCreate = false; }
+        if (g.id === currentGameId) { setCurrent(null); forceCreate = false; }
         onGamesUpdate();
     } catch (err) { console.error(err); alert("No se pudo eliminar."); }
 }
@@ -639,12 +647,16 @@ async function saveManual() {
     const code = makeGameCode();
     const { fsMod } = fb;
     try {
-        const batch = fsMod.writeBatch(fb.db);
-        batch.set(gameRef(code), {
+        // El juego se crea PRIMERO y por separado: la regla de seguridad de los
+        // jugadores valida con get(games/{id}), que dentro de un mismo batch no
+        // ve el juego recién creado. Crear el padre y confirmar evita el
+        // "Missing or insufficient permissions".
+        await fsMod.setDoc(gameRef(code), {
             adminUid: uid, title, status: "drawn", kind: "manual",
             participants: manualSelected.map((p) => ({ id: p.id, name: p.name })),
             hideAssignments: false, createdAt: fsMod.serverTimestamp(), updatedAt: fsMod.serverTimestamp()
         });
+        const batch = fsMod.writeBatch(fb.db);
         pairs.forEach((pr, i) => {
             batch.set(fsMod.doc(fb.db, "games", code, "players", pr.giverId), {
                 personId: pr.giverId, name: nameById[pr.giverId],
