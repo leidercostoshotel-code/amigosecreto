@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎁 Amigo Secreto - Swissotel Lima</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .hotel-name {
+            text-align: center;
+            color: #ffd700;
+            font-size: 1.8em;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #fff;
+            font-size: 1.2em;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+
+        .mujeres-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-bottom: 40px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hombres-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .seccion-titulo {
+            text-align: center;
+            color: white;
+            font-size: 2em;
+            margin: 30px 0 20px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            font-weight: bold;
+        }
+
+        @media (max-width: 968px) {
+            .mujeres-grid, .hombres-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .mujeres-grid, .hombres-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .persona-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .persona-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: rotate(45deg);
+            transition: all 0.5s;
+        }
+
+        .persona-card:hover::before {
+            left: 100%;
+        }
+
+        .persona-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .persona-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+            animation: bounce 2s ease infinite;
+        }
+
+        .persona-nombre {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #1e3c72;
+            margin-bottom: 10px;
+        }
+
+        .ver-lista-btn {
+            background: linear-gradient(135deg, #1e3c72, #7e22ce);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .ver-lista-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 7px 20px rgba(0,0,0,0.3);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%);
+            margin: 3% auto;
+            padding: 40px;
+            border-radius: 25px;
+            width: 90%;
+            max-width: 700px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            animation: slideDown 0.5s;
+            position: relative;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 35px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            line-height: 20px;
+        }
+
+        .close:hover {
+            color: #1e3c72;
+            transform: rotate(90deg);
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 30px;
+            clear: both;
+            padding-top: 20px;
+        }
+
+        .modal-icon {
+            font-size: 5em;
+            animation: bounce 1s ease infinite;
+        }
+
+        .modal-nombre {
+            font-size: 2em;
+            color: #1e3c72;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .modal-frase {
+            font-size: 1.3em;
+            color: #7e22ce;
+            font-style: italic;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(126, 34, 206, 0.1);
+            border-radius: 15px;
+            font-weight: 500;
+        }
+
+        .deseos-lista {
+            list-style: none;
+            padding: 0;
+        }
+
+        .deseo-item {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 15px;
+            border-left: 5px solid #1e3c72;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            animation: slideInLeft 0.5s;
+            animation-fill-mode: both;
+        }
+
+        .deseo-item:hover {
+            transform: translateX(10px);
+            box-shadow: 0 7px 20px rgba(0,0,0,0.15);
+        }
+
+        .deseo-icon {
+            color: #7e22ce;
+            margin-right: 15px;
+            font-size: 1.5em;
+        }
+
+        .deseo-texto {
+            display: inline-block;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .firework {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideDown {
+            from { 
+                transform: translateY(-100px) scale(0.8);
+                opacity: 0;
+            }
+            to { 
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                transform: translateX(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes explode {
+            0% {
+                transform: translate(0, 0);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty));
+                opacity: 0;
+            }
+        }
+
+        .snowflake {
+            position: fixed;
+            top: -10px;
+            z-index: 999;
+            user-select: none;
+            pointer-events: none;
+            animation: fall linear infinite;
+            color: white;
+            opacity: 0.7;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh);
+            }
+        }
+
+        .castle-emoji {
+            position: fixed;
+            font-size: 3em;
+            pointer-events: none;
+            z-index: 9999;
+            animation: castleExplode 1.5s ease-out forwards;
+        }
+
+        @keyframes castleExplode {
+            0% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.5) rotate(180deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(0) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎁 Amigo Secreto 2025 🎄</h1>
+        <div class="hotel-name">🏨 Swissotel Lima - Perú</div>
+        <p class="subtitle">✨ Equipo Administrativo - Haz click para descubrir los deseos ✨</p>
+        
+        <div class="seccion-titulo">👩 Las Magnificas 👩</div>
+        <div class="mujeres-grid" id="mujeresGrid">
+            <!-- Las mujeres se cargarán aquí -->
+        </div>
+
+        <div class="seccion-titulo">👨 Los Magnificos 👨</div>
+        <div class="hombres-grid" id="hombresGrid">
+            <!-- Los hombres se cargarán aquí -->
+        </div>
+    </div>
+
+    <!-- Audio de fondo -->
+    <audio id="musicaFondo" loop>
+        <source src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" type="audio/mpeg">
+    </audio>
+    <audio id="sonidoClick" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></audio>
+    
+    <button id="toggleMusica" style="position: fixed; bottom: 20px; right: 20px; background: linear-gradient(135deg, #1e3c72, #7e22ce); color: white; border: none; padding: 15px 25px; border-radius: 50px; cursor: pointer; font-size: 1.2em; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 10000; transition: all 0.3s;">
+        🎵 Música
+    </button>
+
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-header">
+                <div class="modal-icon" id="modalIcon"></div>
+                <div class="modal-nombre" id="modalNombre"></div>
+                <div class="modal-frase" id="modalFrase"></div>
+            </div>
+            <ul class="deseos-lista" id="deseosLista"></ul>
+        </div>
+    </div>
+
+    <script>
+        // Datos del equipo administrativo del Swissotel Lima
+        const personas = [
+            // MUJERES (3)
+            {
+                nombre: "Gladys",
+                icono: "👩‍💼",
+                frase: "✨ ¡La magia de dar está en el corazón! ✨",
+                deseos: [
+                    { texto: "Un gift de Saga", icono: "🕯️" },
+                    { texto: "Un gift de Saga", icono: "📔" },
+                    { texto: "Sorprendeme 3", icono: "☕" },
+                    { texto: "Sorprendeme 4", icono: "🖼️" },
+                    { texto: "Sorprendeme 5", icono: "🧴" }
+                ]
+            },
+            {
+                nombre: "Olinda",
+                icono: "👩‍🏫",
+                frase: "💝 ¡Dar con amor es el mejor regalo! 💝",
+                deseos: [
+                    { texto: "Perfume floral", icono: "☕" },
+                    { texto: "Bloqueador de rostro", icono: "📚" },
+                    { texto: "Cartera morralito", icono: "📅" },
+                    { texto: "Aretes pegados", icono: "💡" },
+                    { texto: "Sorprendeme", icono: "✒️" }
+                ]
+            },
+            {
+                nombre: "Mercedes",
+                icono: "👩‍⚕️",
+                frase: "💫 ¡Un gesto amable vale más que mil palabras! 💫",
+                deseos: [
+                    { texto: "TARJETERO COLOR MARRON: MAICHAEL KORS", icono: "🌸" },
+                    { texto: "Anillo Pirámides En Plata Pandorame #52", icono: "🛋️" },
+                    { texto: "Anillo De Plata Con Perlas Cultivada", icono: "🍵" },
+                    { texto: "Satchel Erea Crepier", icono: "😴" },
+                    { texto: "Sorprendeme", icono: "🕯️" }
+                ]
+            },
+            // HOMBRES (6)
+            {
+                nombre: "Gary",
+                icono: "👨‍💻",
+                frase: "🎯 ¡Cada regalo es una sonrisa envuelta! 🎯",
+                deseos: [
+                    { texto: "Reloj Xiaomi Redmi Watch 5 Active, SpO2, Altavoz, Microfono - Negro media noche", icono: "🖱️" },
+                    { texto: "BILLETERA ESTILO CLASICO", icono: "🎒" },
+                    { texto: "CORREA NOIR SUEDE", icono: "🎧" },
+                    { texto: "-", icono: "🔋" },
+                    { texto: "Sorprendeme", icono: "📎" }
+                ]
+            },
+            {
+                nombre: "Xavier",
+                icono: "👨‍💼",
+                frase: "🌟 ¡La generosidad ilumina el camino! 🌟",
+                deseos: [
+                    { texto: "Mochila de Viaje Impermeable 180° Cuero Sintético Puerto USB Negro Mod B  (0) - FALABELLA - COLOR OSCURO", icono: "👛" },
+                    { texto: "Audífonos internos USB-C® con cable | IER-EX15C - SONY - YAPEAR DIFERENCIA", icono: "👔" },
+                    { texto: "Polo DEPORTIVO Manga Larga - Talla M - Color oscuro", icono: "🎁" },
+                    { texto: "POLO MANGA LARGA DEPORTIVO (TALLA M)", icono: "🥤" },
+                    { texto: "AUDÍFONOS  BLUETOOTH SONY", icono: "🔑" }
+                ]
+            },
+            {
+                nombre: "Percy",
+                icono: "👨‍🍳",
+                frase: "🍽️ ¡Compartir es el ingrediente secreto! 🍽️",
+                deseos: [
+                    { texto: "AUDIFONOS SONY ALAMBRICOS MDR-EX110AP Negro o MDR-XB55AP Negro", icono: "🔪" },
+                    { texto: "POLO PUMA TALLA M Qualifier Crew Neck Short Sleeve", icono: "📖" },
+                    { texto: "REPLICA POLO DE ALIANZA ADIDAS 1996 CON CUELLO CAMISA TALLA L", icono: "👨‍🍳" },
+                    { texto: "POLO DEPORTIVO Puma Polo Qualifier Crew Neck Short Sleeve Talla M", icono: "🧂" },
+                    { texto: "POLO REPLICA DE ALIANZA LIMA ADIDAS CON CUELLO AÑO 1996", icono: "🎋" }
+                ]
+            },
+            {
+                nombre: "Martin",
+                icono: "👨‍🔧",
+                frase: "🔧 ¡Las mejores herramientas son las del corazón! 🔧",
+                deseos: [
+                    { texto: "Billetera de cuero - Negro", icono: "🔨" },
+                    { texto: "Billetera de cuero - Negro", icono: "🔦" },
+                    { texto: "Billetera de cuero - Negro", icono: "🗡️" },
+                    { texto: "Billetera de cuero - Negro", icono: "🧤" },
+                    { texto: "Sorprendeme", icono: "🧰" }
+                ]
+            },
+            {
+                nombre: "Leider",
+                icono: "👨‍💼",
+                frase: "🚀 ¡El éxito se comparte, no se acapara! 🚀",
+                deseos: [
+                    { texto: "POLO MANGA LARGA TALLA M", icono: "⌚" },
+                    { texto: "CORREA COLOR NEGRO", icono: "💼" },
+                    { texto: "Gafas de sol polarizadas", icono: "🕶️" },
+                    { texto: "BILLETERA", icono: "⚡" },
+                    { texto: "CAMISA TALLA M", icono: "📖" }
+                ]
+            },
+            {
+                nombre: "Andres",
+                icono: "👨‍🎓",
+                frase: "🎓 ¡Aprender a dar es la mejor enseñanza! 🎓",
+                deseos: [
+                    { texto: "Polo deportivo con cuello Adidas Tiro 24 Competition talla L", icono: "📱" },
+                    { texto: "Camiseta de entrenamiento / de vestir talla L", icono: "👓" },
+                    { texto: "Mochila deportiva Adidas: Adicolor / Adidas Classic / Linear / Tiro 23 League", icono: "☕" },
+                    { texto: "Sorprendeme", icono: "💡" },
+                    { texto: "Sorprendeme", icono: "📓" }
+                ]
+            }
+        ];
+
+        const personasGrid = document.getElementById('personasGrid');
+        const mujeresGrid = document.getElementById('mujeresGrid');
+        const hombresGrid = document.getElementById('hombresGrid');
+        const modal = document.getElementById('modal');
+        const closeBtn = document.getElementsByClassName('close')[0];
+        const toggleMusica = document.getElementById('toggleMusica');
+        const musicaFondo = document.getElementById('musicaFondo');
+        let musicaActiva = false;
+
+        // Separar mujeres y hombres
+        const mujeres = personas.slice(0, 3);
+        const hombres = personas.slice(3);
+
+        // Música de fondo con síntesis de audio
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioContext = new AudioContext();
+        let oscillator = null;
+        let gainNode = null;
+
+        function iniciarMusica() {
+            if (oscillator) return;
+            
+            // Crear un tono suave y relajante
+            oscillator = audioContext.createOscillator();
+            gainNode = audioContext.createGain();
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(261.63, audioContext.currentTime); // Do central
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.start();
+            
+            // Crear melodía suave
+            const notas = [261.63, 293.66, 329.63, 349.23, 392.00, 349.23, 329.63, 293.66];
+            let tiempoNota = 0;
+            
+            function tocarMelodia() {
+                if (!musicaActiva) return;
+                notas.forEach((frecuencia, index) => {
+                    setTimeout(() => {
+                        if (oscillator && musicaActiva) {
+                            oscillator.frequency.setValueAtTime(frecuencia, audioContext.currentTime);
+                        }
+                    }, index * 500);
+                });
+                setTimeout(tocarMelodia, notas.length * 500);
+            }
+            
+            tocarMelodia();
+        }
+
+        function detenerMusica() {
+            if (oscillator) {
+                oscillator.stop();
+                oscillator = null;
+                gainNode = null;
+            }
+        }
+
+        toggleMusica.onclick = function() {
+            musicaActiva = !musicaActiva;
+            if (musicaActiva) {
+                audioContext.resume();
+                iniciarMusica();
+                toggleMusica.textContent = '🔊 Música';
+                toggleMusica.style.transform = 'scale(1.1)';
+            } else {
+                detenerMusica();
+                toggleMusica.textContent = '🔇 Música';
+                toggleMusica.style.transform = 'scale(1)';
+            }
+        }
+
+        // Sonido de click
+        function reproducirSonidoClick() {
+            const clickContext = new AudioContext();
+            const clickOsc = clickContext.createOscillator();
+            const clickGain = clickContext.createGain();
+            
+            clickOsc.connect(clickGain);
+            clickGain.connect(clickContext.destination);
+            
+            clickOsc.frequency.value = 800;
+            clickGain.gain.setValueAtTime(0.3, clickContext.currentTime);
+            clickGain.gain.exponentialRampToValueAtTime(0.01, clickContext.currentTime + 0.1);
+            
+            clickOsc.start(clickContext.currentTime);
+            clickOsc.stop(clickContext.currentTime + 0.1);
+        }
+
+        // Crear tarjetas de mujeres
+        mujeres.forEach((persona, index) => {
+            const card = document.createElement('div');
+            card.className = 'persona-card';
+            card.innerHTML = `
+                <div class="persona-icon">${persona.icono}</div>
+                <div class="persona-nombre">${persona.nombre}</div>
+                <button class="ver-lista-btn" onclick="mostrarLista(${index})">
+                    <i class="fas fa-gift"></i> Ver Lista de Deseos
+                </button>
+            `;
+            mujeresGrid.appendChild(card);
+        });
+
+        // Crear tarjetas de hombres
+        hombres.forEach((persona, index) => {
+            const card = document.createElement('div');
+            card.className = 'persona-card';
+            card.innerHTML = `
+                <div class="persona-icon">${persona.icono}</div>
+                <div class="persona-nombre">${persona.nombre}</div>
+                <button class="ver-lista-btn" onclick="mostrarLista(${index + 3})">
+                    <i class="fas fa-gift"></i> Ver Lista de Deseos
+                </button>
+            `;
+            hombresGrid.appendChild(card);
+        });
+
+        function crearCastillos(x, y) {
+            const castillos = ['🏰', '🎆', '🎇', '✨', '💥'];
+            const cantidad = 15;
+            
+            for (let i = 0; i < cantidad; i++) {
+                const castle = document.createElement('div');
+                castle.className = 'castle-emoji';
+                castle.textContent = castillos[Math.floor(Math.random() * castillos.length)];
+                castle.style.left = x + 'px';
+                castle.style.top = y + 'px';
+                
+                const angle = (Math.PI * 2 * i) / cantidad;
+                const velocity = 100 + Math.random() * 100;
+                const tx = Math.cos(angle) * velocity;
+                const ty = Math.sin(angle) * velocity;
+                
+                castle.style.setProperty('--tx', tx + 'px');
+                castle.style.setProperty('--ty', ty + 'px');
+                
+                document.body.appendChild(castle);
+                
+                setTimeout(() => castle.remove(), 1500);
+            }
+        }
+
+        function crearFuegosArtificiales() {
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+            const cantidad = 100;
+            
+            for (let i = 0; i < cantidad; i++) {
+                setTimeout(() => {
+                    const x = Math.random() * window.innerWidth;
+                    const y = Math.random() * window.innerHeight * 0.5;
+                    
+                    for (let j = 0; j < 30; j++) {
+                        const firework = document.createElement('div');
+                        firework.className = 'firework';
+                        firework.style.left = x + 'px';
+                        firework.style.top = y + 'px';
+                        firework.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                        
+                        const angle = (Math.PI * 2 * j) / 30;
+                        const velocity = 50 + Math.random() * 100;
+                        const tx = Math.cos(angle) * velocity;
+                        const ty = Math.sin(angle) * velocity;
+                        
+                        firework.style.setProperty('--tx', tx + 'px');
+                        firework.style.setProperty('--ty', ty + 'px');
+                        firework.style.animation = 'explode 1s ease-out forwards';
+                        
+                        document.body.appendChild(firework);
+                        
+                        setTimeout(() => firework.remove(), 1000);
+                    }
+                }, i * 20);
+            }
+        }
+
+        function mostrarLista(index) {
+            const persona = personas[index];
+            
+            // Reproducir sonido de click
+            reproducirSonidoClick();
+            
+            // Crear explosión de castillos en el centro
+            crearCastillos(window.innerWidth / 2, window.innerHeight / 2);
+            crearFuegosArtificiales();
+            
+            setTimeout(() => {
+                document.getElementById('modalIcon').textContent = persona.icono;
+                document.getElementById('modalNombre').textContent = persona.nombre;
+                document.getElementById('modalFrase').textContent = persona.frase;
+                
+                const deseosLista = document.getElementById('deseosLista');
+                deseosLista.innerHTML = '';
+                
+                persona.deseos.forEach((deseo, i) => {
+                    setTimeout(() => {
+                        const li = document.createElement('li');
+                        li.className = 'deseo-item';
+                        li.style.animationDelay = i * 0.1 + 's';
+                        li.innerHTML = `
+                            <span class="deseo-icon">${deseo.icono}</span>
+                            <span class="deseo-texto">${deseo.texto}</span>
+                        `;
+                        deseosLista.appendChild(li);
+                    }, i * 150);
+                });
+                
+                modal.style.display = 'block';
+            }, 800);
+        }
+
+        closeBtn.onclick = function() {
+            modal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Crear copos de nieve
+        function crearCopo() {
+            const copo = document.createElement('div');
+            copo.className = 'snowflake';
+            copo.innerHTML = '❄️';
+            copo.style.left = Math.random() * 100 + '%';
+            copo.style.animationDuration = Math.random() * 3 + 2 + 's';
+            copo.style.opacity = Math.random();
+            copo.style.fontSize = Math.random() * 10 + 10 + 'px';
+            document.body.appendChild(copo);
+            
+            setTimeout(() => {
+                copo.remove();
+            }, 5000);
+        }
+
+        setInterval(crearCopo, 300);
+    </script>
+</body>
+</html>
