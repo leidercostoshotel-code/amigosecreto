@@ -124,6 +124,10 @@ body {
 
 .actions { display: flex; flex-direction: column; gap: 10px; margin-top: 26px; }
 
+.check-row { display: flex; gap: 12px; align-items: flex-start; margin-top: 18px; padding: 14px; background: var(--surface-soft); border: 1px solid var(--surface-line); border-radius: var(--radius-md); cursor: pointer; font-size: 0.9rem; color: var(--text-soft); line-height: 1.45; }
+.check-row input { width: 20px; height: 20px; flex: none; margin-top: 1px; accent-color: var(--primary); cursor: pointer; }
+.check-row strong { color: var(--text); }
+
 /* Counts / lists */
 .list-head { display: flex; align-items: baseline; justify-content: space-between; margin: 26px 0 12px; }
 .list-head h2 { font-size: 1rem; color: var(--text); }

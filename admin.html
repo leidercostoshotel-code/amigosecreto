@@ -68,6 +68,11 @@
                 <div class="list-head"><h2>En el sorteo</h2><span class="count-pill" id="countPill">0</span></div>
                 <ul class="participants" id="participantsList" aria-live="polite"></ul>
 
+                <label class="check-row" for="hidePlay">
+                    <input type="checkbox" id="hidePlay">
+                    <span>🙈 <strong>Yo también juego.</strong> Oculta las asignaciones para que no veas la tuya; revelarás tu resultado con tu PIN, como todos.</span>
+                </label>
+
                 <div class="actions">
                     <button class="btn btn--accent btn--block" id="drawBtn" type="button" disabled>🎲 Sortear amigos secretos</button>
                     <button class="btn btn--danger btn--block" id="deleteGameBtn" type="button">Eliminar este sorteo</button>
@@ -92,7 +97,8 @@
                 </div>
 
                 <div class="list-head"><h2>Asignaciones</h2><span class="count-pill" id="drawnCount">0</span></div>
-                <p class="hint" style="margin:-6px 0 12px;">Vista privada del organizador. No la muestres a los jugadores. 🙈</p>
+                <p class="hint" id="assignNote" style="margin:-6px 0 12px;">Vista privada del organizador. No la muestres a los jugadores. 🙈</p>
+                <button class="btn btn--ghost btn--block" id="peekBtn" type="button" hidden style="margin-bottom:12px;">👁️ Ver asignaciones de todas formas</button>
                 <div id="assignmentsList"></div>
 
                 <hr class="divider">
