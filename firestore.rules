@@ -11,6 +11,15 @@ service cloud.firestore {
     function signedIn() {
       return request.auth != null;
     }
+
+    // Lista de integrantes guardados: privada de cada admin.
+    match /admins/{adminUid} {
+      allow read, write: if signedIn() && request.auth.uid == adminUid;
+      match /people/{personId} {
+        allow read, write: if signedIn() && request.auth.uid == adminUid;
+      }
+    }
+
     function gameData(gameId) {
       return get(/databases/$(database)/documents/games/$(gameId)).data;
     }

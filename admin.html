@@ -14,104 +14,175 @@
             <button class="app__logout" id="logoutBtn" type="button" hidden>Salir</button>
             <span class="app__badge">🔐 Panel del organizador</span>
             <h1 class="app__title">Amigo Secreto</h1>
-            <p class="app__subtitle">Crea la lista, haz el sorteo y comparte el enlace.</p>
+            <p class="app__subtitle">Integrantes, sorteo e historial — todo guardado en la nube.</p>
         </header>
 
+        <nav class="tabs" id="tabs" hidden>
+            <button class="tab is-active" type="button" data-view="draw">🎲 Sorteo</button>
+            <button class="tab" type="button" data-view="people">👥 Integrantes</button>
+            <button class="tab" type="button" data-view="history">📜 Historial</button>
+        </nav>
+
         <div class="app__body">
-            <!-- Cargando -->
-            <section class="step is-active" id="stateLoading">
+            <!-- Pantallas a página completa -->
+            <section class="screen is-active" id="stateLoading">
                 <div class="loading"><div class="spinner"></div><p style="margin-top:14px;">Cargando…</p></div>
             </section>
 
-            <!-- Falta configurar -->
-            <section class="step" id="stateConfig">
+            <section class="screen" id="stateConfig">
                 <div class="state">
                     <div class="state__emoji">⚙️</div>
                     <h2>Falta configurar el proyecto</h2>
-                    <p>Edita <code>js/firebase-config.js</code> con los datos de tu proyecto de Firebase y sigue el <code>README.md</code>.</p>
+                    <p>Edita <code>js/firebase-config.js</code> con los datos de tu proyecto de Firebase.</p>
                 </div>
             </section>
 
-            <!-- Login -->
-            <section class="step" id="stateLogin">
+            <section class="screen" id="stateLogin">
                 <h2 class="section-title">Iniciar sesión</h2>
                 <label class="field-label" for="email">Correo</label>
                 <input class="input" type="email" id="email" autocomplete="username" placeholder="tucorreo@ejemplo.com" style="margin-bottom:14px;">
                 <label class="field-label" for="password">Contraseña</label>
                 <input class="input" type="password" id="password" autocomplete="current-password" placeholder="••••••••">
                 <p class="feedback" id="loginFeedback" role="alert" aria-live="assertive"></p>
-                <div class="actions">
-                    <button class="btn btn--primary btn--block" id="loginBtn" type="button">Entrar</button>
-                </div>
+                <div class="actions"><button class="btn btn--primary btn--block" id="loginBtn" type="button">Entrar</button></div>
                 <p class="hint" style="text-align:center;margin-top:14px;">La cuenta de administrador se crea una sola vez desde la consola de Firebase.</p>
             </section>
 
-            <!-- Crear juego (sin juego previo) -->
-            <section class="step" id="stateCreate">
-                <h2 class="section-title">Crea tu sorteo</h2>
-                <label class="field-label" for="gameTitleInput">Nombre del sorteo</label>
-                <input class="input" type="text" id="gameTitleInput" maxlength="60" placeholder="Ej. Amigo Secreto Familia 2026" style="margin-bottom:6px;">
-                <p class="feedback" id="createFeedback" role="alert" aria-live="assertive"></p>
-                <div class="actions"><button class="btn btn--primary btn--block" id="createBtn" type="button">Crear sorteo</button></div>
-            </section>
+            <!-- ===================== VISTA: SORTEO ===================== -->
+            <div class="view" id="viewDraw" hidden>
+                <section class="screen" id="stateCreate">
+                    <h2 class="section-title">Crea tu sorteo</h2>
+                    <label class="field-label" for="gameTitleInput">Nombre del sorteo</label>
+                    <input class="input" type="text" id="gameTitleInput" maxlength="60" placeholder="Ej. Amigo Secreto Familia 2026" style="margin-bottom:6px;">
+                    <p class="feedback" id="createFeedback" role="alert" aria-live="assertive"></p>
+                    <div class="actions"><button class="btn btn--primary btn--block" id="createBtn" type="button">Crear sorteo</button></div>
+                </section>
 
-            <!-- Fase: armar lista -->
-            <section class="step" id="stateSetup">
-                <h2 class="section-title" id="setupTitle">Participantes</h2>
-                <label class="field-label" for="nameInput">Nombre del participante</label>
-                <div class="add-row">
-                    <input class="input" type="text" id="nameInput" maxlength="40" autocomplete="off" placeholder="Ej. María, Juan, Abuela…">
-                    <button class="btn btn--primary" id="addBtn" type="button">+ Agregar</button>
-                </div>
-                <p class="feedback" id="nameFeedback" role="alert" aria-live="assertive"></p>
-
-                <div class="list-head"><h2>En el sorteo</h2><span class="count-pill" id="countPill">0</span></div>
-                <ul class="participants" id="participantsList" aria-live="polite"></ul>
-
-                <label class="check-row" for="hidePlay">
-                    <input type="checkbox" id="hidePlay">
-                    <span>🙈 <strong>Yo también juego.</strong> Oculta las asignaciones para que no veas la tuya; revelarás tu resultado con tu PIN, como todos.</span>
-                </label>
-
-                <div class="actions">
-                    <button class="btn btn--accent btn--block" id="drawBtn" type="button" disabled>🎲 Sortear amigos secretos</button>
-                    <button class="btn btn--danger btn--block" id="deleteGameBtn" type="button">Eliminar este sorteo</button>
-                </div>
-            </section>
-
-            <!-- Fase: sorteo hecho -->
-            <section class="step" id="stateDrawn">
-                <div class="share">
-                    <div class="share__label">Comparte con los jugadores</div>
-                    <div class="share__code" id="shareCode">—</div>
-                    <div class="share__row">
-                        <span class="share__link" id="shareLink"></span>
-                        <button class="btn btn--ghost" id="copyLinkBtn" type="button">Copiar</button>
+                <section class="screen" id="stateSetup">
+                    <h2 class="section-title" id="setupTitle">Participantes</h2>
+                    <label class="field-label" for="nameInput">Agregar participante (elige de tus integrantes o escribe uno nuevo)</label>
+                    <div class="add-row">
+                        <input class="input" type="text" id="nameInput" list="peopleOptions" maxlength="40" autocomplete="off" placeholder="Empieza a escribir un nombre…">
+                        <datalist id="peopleOptions"></datalist>
+                        <button class="btn btn--primary" id="addBtn" type="button">+ Agregar</button>
                     </div>
-                    <p class="hint" id="copyHint" style="margin-top:8px;">Cada persona abre el enlace, toca su nombre y crea su PIN.</p>
-                </div>
+                    <p class="feedback" id="nameFeedback" role="alert" aria-live="assertive"></p>
 
-                <div class="progress">
-                    <div class="progress__bar"><div class="progress__fill" id="progressFill"></div></div>
-                    <span class="progress__text" id="progressText">0 / 0</span>
-                </div>
+                    <div class="list-head"><h2>En el sorteo</h2><span class="count-pill" id="countPill">0</span></div>
+                    <ul class="participants" id="participantsList" aria-live="polite"></ul>
 
-                <div class="list-head"><h2>Asignaciones</h2><span class="count-pill" id="drawnCount">0</span></div>
-                <p class="hint" id="assignNote" style="margin:-6px 0 12px;">Vista privada del organizador. No la muestres a los jugadores. 🙈</p>
-                <button class="btn btn--ghost btn--block" id="peekBtn" type="button" hidden style="margin-bottom:12px;">👁️ Ver asignaciones de todas formas</button>
-                <div id="assignmentsList"></div>
+                    <label class="check-row" for="avoidRepeat" id="avoidRepeatRow">
+                        <input type="checkbox" id="avoidRepeat" checked>
+                        <span>🔁 <strong>No repetir años anteriores.</strong> Evita que a alguien le toque la misma persona de un sorteo pasado.</span>
+                    </label>
+                    <label class="check-row" for="hidePlay">
+                        <input type="checkbox" id="hidePlay">
+                        <span>🙈 <strong>Yo también juego.</strong> Oculta las asignaciones para no ver la tuya; la revelas con tu PIN.</span>
+                    </label>
 
-                <hr class="divider">
-                <div class="actions">
-                    <button class="btn btn--ghost btn--block" id="redrawBtn" type="button">🔁 Volver a sortear (mismas personas)</button>
-                    <button class="btn btn--ghost btn--block" id="editBtn" type="button">✏️ Editar participantes</button>
-                    <button class="btn btn--danger btn--block" id="newGameBtn" type="button">Empezar un sorteo nuevo</button>
+                    <div class="actions">
+                        <button class="btn btn--accent btn--block" id="drawBtn" type="button" disabled>🎲 Sortear amigos secretos</button>
+                        <button class="btn btn--danger btn--block" id="deleteGameBtn" type="button">Eliminar este sorteo</button>
+                    </div>
+                </section>
+
+                <section class="screen" id="stateDrawn">
+                    <div class="share">
+                        <div class="share__label">Comparte con los jugadores</div>
+                        <div class="share__code" id="shareCode">—</div>
+                        <div class="share__row">
+                            <span class="share__link" id="shareLink"></span>
+                            <button class="btn btn--ghost" id="copyLinkBtn" type="button">Copiar</button>
+                        </div>
+                        <p class="hint" id="copyHint" style="margin-top:8px;">Cada persona abre el enlace, toca su nombre y crea su PIN.</p>
+                    </div>
+
+                    <div class="progress">
+                        <div class="progress__bar"><div class="progress__fill" id="progressFill"></div></div>
+                        <span class="progress__text" id="progressText">0 / 0</span>
+                    </div>
+
+                    <div class="list-head"><h2>Asignaciones</h2><span class="count-pill" id="drawnCount">0</span></div>
+                    <p class="hint" id="assignNote" style="margin:-6px 0 12px;">Vista privada del organizador. No la muestres a los jugadores. 🙈</p>
+                    <button class="btn btn--ghost btn--block" id="peekBtn" type="button" hidden style="margin-bottom:12px;">👁️ Ver asignaciones de todas formas</button>
+                    <div id="assignmentsList"></div>
+
+                    <hr class="divider">
+                    <div class="actions">
+                        <button class="btn btn--ghost btn--block" id="redrawBtn" type="button">🔁 Volver a sortear (mismas personas)</button>
+                        <button class="btn btn--ghost btn--block" id="editBtn" type="button">✏️ Editar participantes</button>
+                        <button class="btn btn--ghost btn--block" id="newGameBtn" type="button">➕ Empezar un sorteo nuevo</button>
+                    </div>
+                </section>
+            </div>
+
+            <!-- ===================== VISTA: INTEGRANTES ===================== -->
+            <div class="view" id="viewPeople" hidden>
+                <h2 class="section-title">Tus integrantes</h2>
+                <p class="hint" style="margin:0 0 14px;">Guarda aquí a las personas. Aparecerán como sugerencias al armar un sorteo.</p>
+                <label class="field-label" for="personInput">Nombre</label>
+                <div class="add-row">
+                    <input class="input" type="text" id="personInput" maxlength="40" autocomplete="off" placeholder="Ej. María González">
+                    <button class="btn btn--primary" id="personAddBtn" type="button">+ Agregar</button>
                 </div>
-            </section>
+                <p class="feedback" id="personFeedback" role="alert" aria-live="assertive"></p>
+
+                <div class="list-head"><h2>Guardados</h2><span class="count-pill" id="peopleCount">0</span></div>
+                <ul class="participants" id="peopleList" aria-live="polite"></ul>
+            </div>
+
+            <!-- ===================== VISTA: HISTORIAL ===================== -->
+            <div class="view" id="viewHistory" hidden>
+                <div class="list-head"><h2>Historial de sorteos</h2><span class="count-pill" id="historyCount">0</span></div>
+                <p class="hint" style="margin:-6px 0 14px;">Cada sorteo queda guardado. Sirve para no repetir asignaciones.</p>
+                <div class="actions" style="margin-top:0;margin-bottom:18px;">
+                    <button class="btn btn--ghost btn--block" id="registerPastBtn" type="button">📝 Registrar un sorteo anterior (hecho a mano)</button>
+                </div>
+                <div id="historyList"></div>
+
+                <!-- Sub-panel: registrar sorteo anterior -->
+                <div id="manualEntry" hidden>
+                    <hr class="divider">
+                    <h2 class="section-title">Registrar sorteo anterior</h2>
+                    <label class="field-label" for="manualTitle">Nombre / año</label>
+                    <input class="input" type="text" id="manualTitle" maxlength="60" placeholder="Ej. 2025" style="margin-bottom:16px;">
+
+                    <div class="field-label">1) ¿Quiénes participaron?</div>
+                    <div id="manualPeople" class="check-list"></div>
+                    <p class="hint" id="manualPeopleHint" style="margin-top:6px;"></p>
+
+                    <div class="actions" style="margin-top:14px;">
+                        <button class="btn btn--primary btn--block" id="manualNextBtn" type="button">Continuar →</button>
+                    </div>
+
+                    <div id="manualPairsWrap" hidden>
+                        <div class="field-label" style="margin-top:8px;">2) ¿A quién le regaló cada quien?</div>
+                        <div id="manualPairs"></div>
+                        <p class="feedback" id="manualFeedback" role="alert" aria-live="assertive"></p>
+                        <div class="actions">
+                            <button class="btn btn--accent btn--block" id="manualSaveBtn" type="button">Guardar en el historial</button>
+                        </div>
+                    </div>
+
+                    <div class="actions" style="margin-top:4px;">
+                        <button class="btn btn--ghost btn--block" id="manualCancelBtn" type="button">Cancelar</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <p class="footnote"><a href="index.html">Ir a la vista de jugador →</a></p>
     </main>
+
+    <!-- Modal: ver asignaciones de un sorteo del historial -->
+    <div class="overlay modal" id="histModal" role="dialog" aria-modal="true" aria-labelledby="histModalTitle" aria-hidden="true">
+        <div class="modal__card">
+            <h2 class="modal__title" id="histModalTitle">Sorteo</h2>
+            <p class="modal__note">Asignaciones guardadas</p>
+            <div id="histModalList"></div>
+            <button class="btn btn--ghost btn--block" id="histModalClose" type="button" style="margin-top:16px;">Cerrar</button>
+        </div>
+    </div>
 
     <script type="module" src="js/admin.js"></script>
 </body>

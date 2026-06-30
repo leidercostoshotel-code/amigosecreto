@@ -2,8 +2,15 @@
 
 App de amigo secreto con **dos roles**:
 
-- **Administrador** (`admin.html`): inicia sesión con correo y contraseña, crea la lista de participantes, hace el sorteo, comparte el enlace y ve todas las asignaciones.
+- **Administrador** (`admin.html`): inicia sesión con correo y contraseña. Tiene tres pestañas:
+  - **🎲 Sorteo:** arma la lista, sortea y comparte el enlace.
+  - **👥 Integrantes:** lista de personas guardadas (agregar / editar / eliminar). Aparecen como **buscador predictivo** al armar un sorteo.
+  - **📜 Historial:** cada sorteo queda guardado; permite **registrar un sorteo viejo hecho a mano** y verlos todos.
 - **Jugador** (`index.html`): abre el enlace, toca su nombre, crea un **PIN** la primera vez y descubre a quién le regala. Su resultado queda protegido con su PIN para que nadie más lo vea dentro de la app.
+
+Funciones clave:
+- **No repetir años anteriores:** al sortear, evita que a alguien le toque la misma persona de un sorteo pasado (con relajación automática si fuera imposible).
+- **Yo también juego:** oculta las asignaciones al organizador para que también pueda participar y revelar lo suyo con su PIN.
 
 Todo se guarda en **Firestore**, así que funciona entre dispositivos: el admin sortea desde su teléfono y cada persona entra desde el suyo.
 
@@ -17,7 +24,7 @@ No necesita compilación: son archivos estáticos que cargan el SDK de Firebase 
 index.html            → vista del jugador
 admin.html            → panel del organizador
 css/styles.css        → estilos compartidos
-js/core.js            → lógica pura (sorteo, PIN, validaciones)
+js/core.js            → lógica pura (sorteo, sorteo sin repetir, PIN, validaciones)
 js/firebase-config.js → configuración de tu proyecto  ← EDITAR
 js/player.js          → lógica de la vista del jugador
 js/admin.js           → lógica del panel
@@ -53,6 +60,11 @@ firebase deploy --only firestore:rules,hosting
 
 Esto sube las reglas de seguridad y publica el sitio. Verás una URL tipo
 `https://TU_PROYECTO.web.app`.
+
+> ⚠️ Si administras las reglas **a mano desde la consola** (Firestore → Reglas),
+> recuerda **volver a publicar** el contenido de `firestore.rules` cada vez que
+> cambie. Esta versión agrega permisos para la lista de integrantes
+> (`admins/{uid}/people`): sin republicar, los integrantes no se guardarán.
 
 > ¿Solo quieres probar local? `firebase serve` o cualquier servidor estático
 > (`python3 -m http.server`). **No** abras los archivos con `file://`: los
