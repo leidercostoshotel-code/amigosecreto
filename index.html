@@ -118,6 +118,18 @@
             <div class="reveal__name" id="secretName">—</div>
             <p class="reveal__phrase" id="funnyPhrase"></p>
             <div class="wishbox" id="revealWishlist"></div>
+
+            <div class="notesbox">
+                <div class="wishbox__title">💌 Déjale un mensaje anónimo a <span id="noteReceiverName"></span></div>
+                <div class="add-row">
+                    <input class="input" type="text" id="noteInput" maxlength="200" autocomplete="off" placeholder="Ej. ¡Vas a tener una Navidad increíble! 🎄">
+                    <button class="btn btn--primary" id="noteSendBtn" type="button">Enviar</button>
+                </div>
+                <p class="feedback" id="noteFeedback" role="alert" aria-live="assertive"></p>
+            </div>
+
+            <div class="notesbox" id="notesForMeBox"></div>
+
             <button class="btn btn--accent btn--block" id="editMyWishBtn" type="button">📝 Editar mi lista de deseos</button>
             <button class="btn btn--primary btn--block" id="closeRevealBtn" type="button" style="margin-top:10px;">Entendido, ocultar</button>
         </div>

@@ -32,6 +32,10 @@ let fb = null;
 let gameCode = "";
 let players = [];
 let currentView = "reveal";
+const MAX_NOTES = 20;
+// Identidad recordada solo en memoria (para esta visita): quién ya demostró
+// su PIN, así no hay que volver a pedirlo para marcar "comprado".
+let myIdentity = null;
 
 async function start() {
     if (!isConfigured()) { showPublic("stateConfig"); return; }
@@ -172,6 +176,7 @@ async function verifyPlayer(player, note) {
             await fb.fsMod.updateDoc(fb.fsMod.doc(fb.db, "games", gameCode, "players", player.id),
                 { pinHash, pinSalt: salt, revealed: true });
         } catch (err) { console.error(err); alert("No se pudo guardar tu PIN. Inténtalo otra vez."); return false; }
+        myIdentity = { id: player.id, name: player.name };
         return true;
     }
     const pin = await openPinModal({
@@ -183,7 +188,9 @@ async function verifyPlayer(player, note) {
             return (await verifyPin(p1, player.pinSalt, player.pinHash)) ? null : "PIN incorrecto.";
         }
     });
-    return pin !== null;
+    if (pin === null) return false;
+    myIdentity = { id: player.id, name: player.name };
+    return true;
 }
 
 async function onPickName(player) {
@@ -200,6 +207,10 @@ async function reveal(playerId) {
     $("secretName").textContent = me.receiver || (receiver && receiver.name) || "—";
     $("funnyPhrase").textContent = randomPhrase();
     renderRevealWishlist(receiver);
+    renderNotesForMe(me);
+    $("noteReceiverName").textContent = (receiver && receiver.name) || me.receiver || "tu amigo";
+    $("noteInput").value = "";
+    $("noteFeedback").textContent = "";
     openOverlay("revealOverlay");
     $("closeRevealBtn").focus();
     launchConfetti();
@@ -211,14 +222,93 @@ function renderRevealWishlist(receiver) {
     title.className = "wishbox__title";
     title.textContent = "🎁 La lista de deseos de " + (receiver ? receiver.name : "tu amigo") + ":";
     box.appendChild(title);
-    box.appendChild(deseosList(receiver && receiver.wishlist, "Aún no agregó nada a su lista."));
+    box.appendChild(deseosList(receiver && receiver.wishlist, "Aún no agregó nada a su lista.",
+        receiver && receiver.id, () => renderRevealWishlist(receiver)));
 }
 
 $("editMyWishBtn").addEventListener("click", () => {
     if (revealedId) openWishEdit(playerById(revealedId));
 });
 
-// --- Ver lista de deseos (solo lectura) ---
+// --- Mensajes anónimos entre amigo secreto y su amigo ---
+function renderNotesForMe(me) {
+    const box = $("notesForMeBox");
+    box.textContent = "";
+    const title = document.createElement("div");
+    title.className = "wishbox__title";
+    title.textContent = "📬 Mensajes que te dejó tu amigo secreto:";
+    box.appendChild(title);
+    const list = document.createElement("ul");
+    list.className = "notas";
+    const notes = me.notesForMe || [];
+    if (notes.length === 0) {
+        const empty = document.createElement("li");
+        empty.className = "deseos__empty";
+        empty.textContent = "Todavía no te han dejado mensajes.";
+        list.appendChild(empty);
+    } else {
+        notes.forEach((text) => {
+            const li = document.createElement("li");
+            li.className = "nota";
+            const icon = document.createElement("span");
+            icon.className = "nota__icon"; icon.textContent = "💌"; icon.setAttribute("aria-hidden", "true");
+            const t = document.createElement("span");
+            t.className = "nota__text"; t.textContent = text;
+            li.append(icon, t);
+            list.appendChild(li);
+        });
+    }
+    box.appendChild(list);
+}
+
+$("noteSendBtn").addEventListener("click", sendAnonymousNote);
+$("noteInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); sendAnonymousNote(); } });
+async function sendAnonymousNote() {
+    if (!revealedId) return;
+    const me = playerById(revealedId);
+    const receiver = playerById(me.receiverId);
+    if (!receiver) { $("noteFeedback").textContent = "No se pudo identificar a tu amigo secreto."; return; }
+    const text = normalizeName($("noteInput").value);
+    if (!text) { $("noteFeedback").textContent = "Escribe un mensaje."; return; }
+    const current = receiver.notesForMe || [];
+    if (current.length >= MAX_NOTES) {
+        $("noteFeedback").textContent = "Tu amigo ya tiene muchos mensajes esperando. Espera a que los lea.";
+        return;
+    }
+    try {
+        await fb.fsMod.updateDoc(fb.fsMod.doc(fb.db, "games", gameCode, "players", receiver.id),
+            { notesForMe: current.concat([text]) });
+        $("noteInput").value = "";
+        $("noteFeedback").textContent = "✓ Mensaje enviado (anónimo)";
+        $("noteFeedback").classList.add("feedback--ok");
+        setTimeout(() => { $("noteFeedback").textContent = ""; $("noteFeedback").classList.remove("feedback--ok"); }, 3000);
+    } catch (err) { console.error(err); $("noteFeedback").textContent = "No se pudo enviar. Revisa tu conexión."; }
+}
+
+// --- Marcar regalos como "comprados" (anotación privada de quien mira) ---
+function getMyBoughtSet(targetId) {
+    if (!myIdentity || !targetId) return new Set();
+    const me = playerById(myIdentity.id);
+    const marks = (me && me.boughtMarks) || {};
+    return new Set(marks[targetId] || []);
+}
+async function toggleBought(targetId, text) {
+    if (!myIdentity) {
+        alert("Primero identifícate: entra a «🎁 Mi amigo secreto», toca tu nombre y verifica tu PIN.");
+        return;
+    }
+    const me = playerById(myIdentity.id);
+    const marks = JSON.parse(JSON.stringify((me && me.boughtMarks) || {}));
+    const set = new Set(marks[targetId] || []);
+    if (set.has(text)) set.delete(text); else set.add(text);
+    marks[targetId] = Array.from(set);
+    try {
+        await fb.fsMod.updateDoc(fb.fsMod.doc(fb.db, "games", gameCode, "players", myIdentity.id),
+            { boughtMarks: marks });
+    } catch (err) { console.error(err); alert("No se pudo guardar. Revisa tu conexión."); }
+}
+
+// --- Ver lista de deseos (solo lectura, con toggle de "comprado") ---
 let viewedId = null;
 function openWishView(player) {
     viewedId = player.id;
@@ -226,11 +316,17 @@ function openWishView(player) {
     const av = $("wishViewAvatar");
     av.textContent = initials(player.name);
     av.style.backgroundColor = colorFor(player.name);
-    const list = $("wishViewList");
-    list.textContent = "";
-    list.appendChild(deseosList(player.wishlist, "Esta persona aún no agregó su lista de deseos."));
+    renderWishViewContents();
     openOverlay("wishViewModal");
     $("wishViewClose").focus();
+}
+function renderWishViewContents() {
+    const player = playerById(viewedId);
+    if (!player) return;
+    const list = $("wishViewList");
+    list.textContent = "";
+    list.appendChild(deseosList(player.wishlist, "Esta persona aún no agregó su lista de deseos.",
+        player.id, renderWishViewContents));
 }
 $("wishViewClose").addEventListener("click", () => closeOverlay("wishViewModal"));
 
@@ -244,7 +340,10 @@ $("wishEditFromView").addEventListener("click", async () => {
     }
 });
 
-function deseosList(items, emptyMsg) {
+// targetId + refresh son opcionales: cuando están presentes, cada ítem
+// muestra un botón para marcar/desmarcar "comprado" (anotación privada de
+// quien mira, no visible para nadie más).
+function deseosList(items, emptyMsg, targetId, refresh) {
     const frag = document.createDocumentFragment();
     const arr = items || [];
     if (arr.length === 0) {
@@ -254,14 +353,26 @@ function deseosList(items, emptyMsg) {
         frag.appendChild(empty);
         return frag;
     }
+    const boughtSet = targetId ? getMyBoughtSet(targetId) : new Set();
     arr.forEach((text) => {
+        const bought = boughtSet.has(text);
         const li = document.createElement("li");
-        li.className = "deseo";
+        li.className = "deseo" + (bought ? " is-bought" : "");
         const icon = document.createElement("span");
         icon.className = "deseo__icon"; icon.textContent = "🎁"; icon.setAttribute("aria-hidden", "true");
         const t = document.createElement("span");
         t.className = "deseo__text"; t.textContent = text;
         li.append(icon, t);
+        if (targetId) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "deseo__bought";
+            btn.textContent = bought ? "✅" : "🛒";
+            btn.title = bought ? "Marcado como comprado (toca para desmarcar)" : "Marcar como comprado (solo tú lo ves)";
+            btn.setAttribute("aria-label", btn.title);
+            btn.addEventListener("click", async () => { await toggleBought(targetId, text); if (refresh) refresh(); });
+            li.appendChild(btn);
+        }
         frag.appendChild(li);
     });
     return frag;
