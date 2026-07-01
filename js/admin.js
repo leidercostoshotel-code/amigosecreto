@@ -426,7 +426,10 @@ async function deleteGameById(id) {
 
 // ============================ Fase sorteo hecho ============================
 function playerUrl() {
-    const base = location.origin + location.pathname.replace(/[^/]*$/, "index.html");
+    // Enlace "limpio" sin "index.html": el hosting (GitHub Pages / Firebase)
+    // sirve index.html en la raíz del directorio. Un enlace más corto se
+    // reconoce mejor como enlace al escanear el QR.
+    const base = location.origin + location.pathname.replace(/[^/]*$/, "");
     return base + "?game=" + currentGameId;
 }
 
