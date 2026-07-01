@@ -457,6 +457,54 @@ $("qrDownloadBtn").addEventListener("click", () => {
     a.click();
 });
 
+// --- Cartel imprimible: QR grande (SVG vectorial, nítido) + código + pasos ---
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function printCard() {
+    const url = playerUrl();
+    const qr = qrcodeGen(0, "M");
+    qr.addData(url);
+    qr.make();
+    const qrSvg = qr.createSvgTag({ cellSize: 8, margin: 0, scalable: true });
+    const title = (game && game.title) || "Amigo Secreto";
+    const html = '<!doctype html><html lang="es"><head><meta charset="utf-8">'
+        + '<title>' + escapeHtml(title) + ' · Escanéame</title><style>'
+        + '*{box-sizing:border-box;margin:0;padding:0}'
+        + 'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#11202b;padding:28px}'
+        + '.card{max-width:640px;margin:0 auto;text-align:center;border:3px solid #0c4a6e;border-radius:24px;padding:36px 28px;background:#fff}'
+        + '.badge{display:inline-block;background:#0c4a6e;color:#fff;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px;padding:7px 16px;border-radius:999px}'
+        + 'h1{font-size:34px;margin:16px 0 4px;color:#0c4a6e}'
+        + '.tag{font-size:19px;color:#0284c7;font-weight:700;margin-bottom:18px}'
+        + '.qr{width:320px;height:320px;margin:8px auto 14px}.qr svg{width:100%;height:100%}'
+        + '.code{font-size:30px;font-weight:800;letter-spacing:.22em;color:#0c4a6e;margin:6px 0}'
+        + '.code small{display:block;font-size:13px;font-weight:600;letter-spacing:.04em;color:#7d8b97;margin-bottom:4px}'
+        + '.url{font-size:13px;color:#4a5b68;word-break:break-all;margin:8px 0 18px}'
+        + 'ol{max-width:420px;margin:0 auto;text-align:left;font-size:15px;color:#11202b;line-height:1.7;padding-left:22px}'
+        + '.foot{margin-top:18px;font-size:12px;color:#7d8b97}'
+        + '@media print{body{padding:0}.card{border-color:#0c4a6e}}'
+        + '</style></head><body><div class="card">'
+        + '<span class="badge">🎁 Amigo Secreto</span>'
+        + '<h1>' + escapeHtml(title) + '</h1>'
+        + '<div class="tag">📷 ¡Escanéame para tu amigo secreto!</div>'
+        + '<div class="qr">' + qrSvg + '</div>'
+        + '<div class="code"><small>o entra con el código</small>' + escapeHtml(currentGameId) + '</div>'
+        + '<div class="url">' + escapeHtml(url) + '</div>'
+        + '<ol><li>Escanea el QR con la cámara de tu celular (o abre el enlace).</li>'
+        + '<li>Toca <b>tu nombre</b> y crea un <b>PIN</b> de 4 dígitos.</li>'
+        + '<li>Descubre a quién le regalas… ¡y no le cuentes a nadie! 🤫</li></ol>'
+        + '<div class="foot">Cada persona ve solo su resultado, protegido con su PIN.</div>'
+        + '</div><script>window.onload=function(){setTimeout(function(){window.print()},250)}<\/script>'
+        + '</body></html>';
+    const w = window.open("", "_blank");
+    if (!w) { alert("Tu navegador bloqueó la ventana. Permite las ventanas emergentes e inténtalo de nuevo."); return; }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+}
+$("printCardBtn").addEventListener("click", printCard);
+
 function renderDrawn() {
     showScreen("stateDrawn");
     $("shareCode").textContent = currentGameId;
@@ -520,8 +568,8 @@ function renderAssignments() {
             const reset = document.createElement("button");
             reset.className = "participant__remove";
             reset.type = "button";
-            reset.title = "Restablecer PIN de " + p.name;
-            reset.setAttribute("aria-label", "Restablecer PIN de " + p.name);
+            reset.title = "Dar acceso de nuevo a " + p.name + " (borra su PIN y desbloquea su dispositivo)";
+            reset.setAttribute("aria-label", "Dar acceso de nuevo a " + p.name);
             reset.textContent = "↺";
             reset.addEventListener("click", () => resetPin(p));
             row.appendChild(reset);
@@ -535,7 +583,7 @@ $("peekBtn").addEventListener("click", () => {
     renderAssignments();
 });
 async function resetPin(p) {
-    if (!confirm("¿Restablecer el PIN de " + p.name + "? Podrá volver a entrar y crear uno nuevo.")) return;
+    if (!confirm("¿Dar acceso de nuevo a " + p.name + "? Se borra su PIN y se desbloquea su dispositivo; podrá volver a entrar y crear uno nuevo.")) return;
     try {
         await fb.fsMod.updateDoc(fb.fsMod.doc(fb.db, "games", currentGameId, "players", p.id),
             { pinHash: null, pinSalt: null, revealed: false });

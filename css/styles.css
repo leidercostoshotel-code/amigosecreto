@@ -209,6 +209,7 @@ body {
 
 .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--surface-line); }
 .qr-wrap canvas { width: 180px; height: 180px; background: #fff; border-radius: var(--radius-sm); padding: 10px; box-shadow: var(--shadow-soft); }
+.qr-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 
 /* Progress */
 .progress { display: flex; align-items: center; gap: 10px; background: var(--surface-soft); border: 1px solid var(--surface-line); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 22px; }

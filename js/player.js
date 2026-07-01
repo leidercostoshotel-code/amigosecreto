@@ -43,6 +43,17 @@ function setIdentity(id, name) {
     else { bar.hidden = true; }
 }
 
+// --- Bloqueo fuerte del dispositivo ---
+// Al revelar, este dispositivo queda "ligado" a esa persona: se ocultan los
+// demás nombres para que no pueda espiar. Solo el organizador reabre (al
+// restablecer el PIN, el revealed vuelve a false y el bloqueo se libera solo).
+function deviceKey() { return "amigoSecreto.device." + gameCode; }
+function getDeviceOwner() {
+    try { return localStorage.getItem(deviceKey()) || null; } catch (e) { return null; }
+}
+function setDeviceOwner(id) { try { localStorage.setItem(deviceKey(), id); } catch (e) { /* ignore */ } }
+function clearDeviceOwner() { try { localStorage.removeItem(deviceKey()); } catch (e) { /* ignore */ } }
+
 async function start() {
     if (!isConfigured()) { showPublic("stateConfig"); return; }
     gameCode = getGameCode();
@@ -104,9 +115,31 @@ function playerById(id) { return players.find((p) => p.id === id); }
 function renderReveal() {
     const total = players.length;
     const done = players.filter((p) => p.revealed).length;
+
+    // Bloqueo fuerte: si este dispositivo ya reveló, muestra solo eso.
+    const ownerId = getDeviceOwner();
+    let owner = ownerId ? playerById(ownerId) : null;
+    // Si el organizador reabrió (revealed=false) o la persona ya no existe,
+    // el bloqueo se libera solo.
+    if (owner && !owner.revealed) { clearDeviceOwner(); owner = null; }
+    if (owner) {
+        showScreen("stateLocked");
+        $("lockedName").textContent = owner.name;
+        setIdentity(owner.id, owner.name);
+        $("identityChange").hidden = true; // en bloqueo fuerte no hay "cambiar"
+        return;
+    }
+    $("identityChange").hidden = false;
+
     if (total > 0 && done === total) showScreen("revealDone"); else showScreen("statePick");
     renderNames();
 }
+$("reviewMineBtn").addEventListener("click", async () => {
+    const owner = playerById(getDeviceOwner());
+    if (owner && await verifyPlayer(owner, "Ingresa tu PIN para volver a ver tu amigo secreto.")) {
+        await reveal(owner.id);
+    }
+});
 function renderNames() {
     const grid = $("nameGrid");
     grid.textContent = "";
@@ -195,7 +228,7 @@ async function verifyPlayer(player, note) {
         }
     });
     if (pin === null) return false;
-    myIdentity = { id: player.id, name: player.name };
+    setIdentity(player.id, player.name);
     return true;
 }
 
@@ -206,6 +239,8 @@ async function onPickName(player) {
 let revealedId = null;
 async function reveal(playerId) {
     revealedId = playerId;
+    // Este dispositivo queda ligado a esta persona (bloqueo fuerte).
+    setDeviceOwner(playerId);
     await runSuspense();
     const me = playerById(playerId);
     const receiver = playerById(me.receiverId);
@@ -462,6 +497,8 @@ function closeOverlay(id) { const el = $(id); el.classList.remove("is-open"); el
 $("closeRevealBtn").addEventListener("click", () => {
     closeOverlay("revealOverlay");
     document.querySelectorAll(".confetti-piece").forEach((el) => el.remove());
+    // Tras cerrar, aplica el bloqueo del dispositivo (oculta los demás nombres).
+    if (currentView === "reveal") renderReveal();
 });
 $("tryAnotherBtn").addEventListener("click", () => goToGame(""));
 $("reloadBtn").addEventListener("click", () => location.reload());
