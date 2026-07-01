@@ -1,11 +1,28 @@
 // player.js — Vista del jugador: amigo secreto (PIN + revelado) y listas de deseos.
 import { isConfigured, loadFirebase } from "./firebase-config.js";
 import {
-    initials, colorFor, randomPhrase, isValidPin,
+    avatarSvg, randomPhrase, isValidPin,
     hashPin, verifyPin, randomSaltHex, normalizeName, SUSPENSE_MESSAGES
 } from "./core.js";
 
 const $ = (id) => document.getElementById(id);
+
+// Pinta el avatar de una persona en un contenedor circular: usa su foto si
+// dejó un enlace, y si no, un avatar ilustrado según su género (o el neutro).
+function paintAvatar(el, person) {
+    el.textContent = "";
+    el.style.backgroundColor = "";
+    const photo = person && typeof person.photo === "string" ? person.photo.trim() : "";
+    if (/^https?:\/\//i.test(photo)) {
+        const img = document.createElement("img");
+        img.alt = ""; img.decoding = "async"; img.loading = "lazy";
+        img.addEventListener("error", () => { el.innerHTML = avatarSvg(person.name, person.gender); });
+        img.src = photo;
+        el.appendChild(img);
+    } else {
+        el.innerHTML = avatarSvg(person ? person.name : "", person ? person.gender : "");
+    }
+}
 
 function showScreen(id) {
     document.querySelectorAll(".screen").forEach((el) => el.classList.remove("is-active"));
@@ -178,8 +195,7 @@ function nameCard(p, badgeText) {
     card.className = "name-card" + (p.revealed ? " is-revealed" : "");
     const avatar = document.createElement("span");
     avatar.className = "name-card__avatar";
-    avatar.style.backgroundColor = colorFor(p.name);
-    avatar.textContent = initials(p.name);
+    paintAvatar(avatar, p);
     avatar.setAttribute("aria-hidden", "true");
     const name = document.createElement("span");
     name.className = "name-card__name";
@@ -359,9 +375,7 @@ let viewedId = null;
 function openWishView(player) {
     viewedId = player.id;
     $("wishViewTitle").textContent = "Lista de " + player.name;
-    const av = $("wishViewAvatar");
-    av.textContent = initials(player.name);
-    av.style.backgroundColor = colorFor(player.name);
+    paintAvatar($("wishViewAvatar"), player);
     renderWishViewContents();
     openOverlay("wishViewModal");
     $("wishViewClose").focus();
