@@ -12,6 +12,9 @@ App de amigo secreto con **dos roles**:
 
 Funciones clave:
 - **Lista de deseos:** cada persona anota los regalos que quiere; quien le regala los ve al revelar, y todos pueden consultarlas en el tablero (el sorteo sigue secreto).
+- **Marcar "comprado":** sobre cualquier lista de deseos, cada persona puede marcar ítems como comprados. Es una anotación **privada** (cada quien ve solo la suya) para no repetir regalos.
+- **Mensajes anónimos:** al revelar a quién le regalas, puedes dejarle una nota anónima. Y en el mismo lugar ves los mensajes que **tu propio** amigo secreto (aún desconocido) te haya dejado a ti.
+- **Código QR para unirse:** el panel del organizador genera un QR (sin servicios externos) con el enlace del sorteo, listo para imprimir o proyectar.
 - **No repetir años anteriores:** al sortear, evita que a alguien le toque la misma persona de un sorteo pasado (con relajación automática si fuera imposible).
 - **Una sola cadena:** el sorteo nunca arma parejas recíprocas (A↔B) ni grupitos.
 - **Yo también juego:** oculta las asignaciones al organizador para que también pueda participar y revelar lo suyo con su PIN.
@@ -29,6 +32,7 @@ index.html            → vista del jugador
 admin.html            → panel del organizador
 css/styles.css        → estilos compartidos
 js/core.js            → lógica pura (sorteo, sorteo sin repetir, PIN, validaciones)
+js/qrcode-gen.js       → generador de QR vendorizado (MIT, sin CDN externo)
 js/firebase-config.js → configuración de tu proyecto  ← EDITAR
 js/player.js          → lógica de la vista del jugador
 js/admin.js           → lógica del panel
@@ -67,9 +71,10 @@ Esto sube las reglas de seguridad y publica el sitio. Verás una URL tipo
 
 > ⚠️ Si administras las reglas **a mano desde la consola** (Firestore → Reglas),
 > recuerda **volver a publicar** el contenido de `firestore.rules` cada vez que
-> cambie. Esta versión agrega permisos para la lista de integrantes
-> (`admins/{uid}/people`) y para que cada jugador edite su **lista de deseos**
-> (campo `wishlist`): sin republicar, los integrantes y las listas no se guardan.
+> cambie. Esta versión agrega permisos para marcar regalos como "comprados"
+> (campo `boughtMarks`) y para los mensajes anónimos (campo `notesForMe`,
+> limitado a 20 y de solo-crecimiento): sin republicar, esas dos funciones no
+> se guardan.
 
 > ¿Solo quieres probar local? `firebase serve` o cualquier servidor estático
 > (`python3 -m http.server`). **No** abras los archivos con `file://`: los

@@ -50,9 +50,13 @@ service cloud.firestore {
         allow create, delete: if isGameAdmin(gameId);
 
         // Actualizar: el admin puede todo. Un jugador autenticado solo puede:
-        //  (a) reclamar su nombre UNA vez (fijar pinHash/pinSalt) y marcarse visto, o
-        //  (b) editar su lista de deseos (solo el campo 'wishlist').
-        // En ambos casos sin tocar su nombre, su receptor ni su orden.
+        //  (a) reclamar su nombre UNA vez (fijar pinHash/pinSalt) y marcarse visto,
+        //  (b) editar su lista de deseos (solo el campo 'wishlist'),
+        //  (c) marcar/desmarcar "comprado" en la lista de deseos de cualquiera
+        //      (solo el campo 'boughtMarks', es su propia anotación privada), o
+        //  (d) dejarle una nota anónima a otra persona (solo el campo
+        //      'notesForMe', y solo puede crecer, con un tope de 20 notas).
+        // En todos los casos sin tocar el nombre, el receptor ni el orden.
         allow update: if isGameAdmin(gameId) || (
           signedIn()
           && request.resource.data.name == resource.data.name
@@ -65,6 +69,15 @@ service cloud.firestore {
         ) || (
           signedIn()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wishlist'])
+        ) || (
+          signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['boughtMarks'])
+        ) || (
+          signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['notesForMe'])
+          && request.resource.data.notesForMe.size() <= 20
+          && request.resource.data.notesForMe.size()
+               >= (('notesForMe' in resource.data) ? resource.data.notesForMe.size() : 0)
         );
       }
     }
