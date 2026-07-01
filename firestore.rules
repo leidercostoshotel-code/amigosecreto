@@ -72,12 +72,18 @@ service cloud.firestore {
         ) || (
           signedIn()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['boughtMarks'])
+          && request.resource.data.boughtMarks is map
+          && request.resource.data.boughtMarks.size() <= 200
         ) || (
           signedIn()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['notesForMe'])
+          && request.resource.data.notesForMe is list
           && request.resource.data.notesForMe.size() <= 20
+          // Solo puede crecer (no borrar mensajes ajenos). Trata como 0 si antes
+          // no era una lista (ausente o null), evitando errores de evaluación.
           && request.resource.data.notesForMe.size()
-               >= (('notesForMe' in resource.data) ? resource.data.notesForMe.size() : 0)
+               >= ((('notesForMe' in resource.data) && resource.data.notesForMe is list)
+                     ? resource.data.notesForMe.size() : 0)
         );
       }
     }

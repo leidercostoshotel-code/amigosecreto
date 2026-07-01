@@ -366,24 +366,30 @@ async function draw() {
     const { fsMod } = fb;
     try {
         const existing = await fsMod.getDocs(playersColl());
-        // Conserva lo que cada persona ya guardó (lista de deseos, marcas de
-        // "comprado") aunque se re-sortee. Los mensajes anónimos SÍ se
-        // reinician: están ligados a la pareja giver→receiver, que cambia.
-        const previousById = {};
-        existing.forEach((d) => { previousById[d.id] = d.data(); });
+        const existingIds = new Set();
+        existing.forEach((d) => existingIds.add(d.id));
 
         const batch = fsMod.writeBatch(fb.db);
-        existing.forEach((d) => batch.delete(d.ref));
+        const nextIds = new Set(assignments.map((a) => a.giverId));
+        // Borra solo a quienes ya no participan (evita quedar huérfanos).
+        existing.forEach((d) => { if (!nextIds.has(d.id)) batch.delete(d.ref); });
+
         assignments.forEach((a, i) => {
-            const prev = previousById[a.giverId] || {};
-            batch.set(fsMod.doc(fb.db, "games", currentGameId, "players", a.giverId), {
+            const ref = fsMod.doc(fb.db, "games", currentGameId, "players", a.giverId);
+            const core = {
                 personId: a.giverId, name: a.giver,
                 receiverId: a.receiverId, receiver: a.receiver,
                 order: i, pinHash: null, pinSalt: null, revealed: false,
-                wishlist: prev.wishlist || [],
-                boughtMarks: prev.boughtMarks || {},
                 notesForMe: []
-            });
+            };
+            if (existingIds.has(a.giverId)) {
+                // ACTUALIZA sin tocar wishlist/boughtMarks: así se conservan
+                // aunque el jugador los haya editado justo ahora (sin leer-y-pisar,
+                // no hay carrera sobre esos campos).
+                batch.update(ref, core);
+            } else {
+                batch.set(ref, Object.assign({ wishlist: [], boughtMarks: {} }, core));
+            }
         });
         batch.update(gameRef(), {
             status: "drawn", hideAssignments: hide, avoidRepeat: useAvoid,
@@ -425,13 +431,16 @@ function playerUrl() {
 }
 
 // --- Código QR para unirse (generado localmente, sin servicios externos) ---
+const QR_BASE_SIZE = 220;
 function renderQr(url) {
     const canvas = $("qrCanvas");
     const ctx = canvas.getContext("2d");
     const qr = qrcodeGen(0, "M"); // typeNumber 0 = automático; nivel M
     qr.addData(url);
     qr.make();
-    const cellSize = Math.max(2, Math.floor(canvas.width / qr.getModuleCount()));
+    // Nitidez consistente: se parte de una base fija, no del ancho ya mutado
+    // por una render anterior.
+    const cellSize = Math.max(2, Math.floor(QR_BASE_SIZE / qr.getModuleCount()));
     const size = qr.getModuleCount() * cellSize;
     canvas.width = size; canvas.height = size;
     ctx.clearRect(0, 0, size, size);

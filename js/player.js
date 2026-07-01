@@ -36,6 +36,12 @@ const MAX_NOTES = 20;
 // Identidad recordada solo en memoria (para esta visita): quién ya demostró
 // su PIN, así no hay que volver a pedirlo para marcar "comprado".
 let myIdentity = null;
+function setIdentity(id, name) {
+    myIdentity = id ? { id, name } : null;
+    const bar = $("identityBar");
+    if (myIdentity) { $("identityName").textContent = name; bar.hidden = false; }
+    else { bar.hidden = true; }
+}
 
 async function start() {
     if (!isConfigured()) { showPublic("stateConfig"); return; }
@@ -176,7 +182,7 @@ async function verifyPlayer(player, note) {
             await fb.fsMod.updateDoc(fb.fsMod.doc(fb.db, "games", gameCode, "players", player.id),
                 { pinHash, pinSalt: salt, revealed: true });
         } catch (err) { console.error(err); alert("No se pudo guardar tu PIN. Inténtalo otra vez."); return false; }
-        myIdentity = { id: player.id, name: player.name };
+        setIdentity(player.id, player.name);
         return true;
     }
     const pin = await openPinModal({
@@ -206,8 +212,10 @@ async function reveal(playerId) {
     $("giverLabel").textContent = me.name;
     $("secretName").textContent = me.receiver || (receiver && receiver.name) || "—";
     $("funnyPhrase").textContent = randomPhrase();
-    renderRevealWishlist(receiver);
-    renderNotesForMe(me);
+    // Blindaje: si algún dato (lista/notas) llegara corrupto, no debe impedir
+    // que la persona vea a su amigo secreto.
+    try { renderRevealWishlist(receiver); } catch (err) { console.error(err); $("revealWishlist").textContent = ""; }
+    try { renderNotesForMe(me); } catch (err) { console.error(err); $("notesForMeBox").textContent = ""; }
     $("noteReceiverName").textContent = (receiver && receiver.name) || me.receiver || "tu amigo";
     $("noteInput").value = "";
     $("noteFeedback").textContent = "";
@@ -240,7 +248,7 @@ function renderNotesForMe(me) {
     box.appendChild(title);
     const list = document.createElement("ul");
     list.className = "notas";
-    const notes = me.notesForMe || [];
+    const notes = asArray(me.notesForMe).filter((x) => typeof x === "string");
     if (notes.length === 0) {
         const empty = document.createElement("li");
         empty.className = "deseos__empty";
@@ -270,7 +278,7 @@ async function sendAnonymousNote() {
     if (!receiver) { $("noteFeedback").textContent = "No se pudo identificar a tu amigo secreto."; return; }
     const text = normalizeName($("noteInput").value);
     if (!text) { $("noteFeedback").textContent = "Escribe un mensaje."; return; }
-    const current = receiver.notesForMe || [];
+    const current = asArray(receiver.notesForMe);
     if (current.length >= MAX_NOTES) {
         $("noteFeedback").textContent = "Tu amigo ya tiene muchos mensajes esperando. Espera a que los lea.";
         return;
@@ -286,11 +294,14 @@ async function sendAnonymousNote() {
 }
 
 // --- Marcar regalos como "comprados" (anotación privada de quien mira) ---
+function asArray(v) { return Array.isArray(v) ? v : []; }
 function getMyBoughtSet(targetId) {
     if (!myIdentity || !targetId) return new Set();
     const me = playerById(myIdentity.id);
-    const marks = (me && me.boughtMarks) || {};
-    return new Set(marks[targetId] || []);
+    const marks = (me && me.boughtMarks && typeof me.boughtMarks === "object") ? me.boughtMarks : {};
+    // Blindaje: aunque un dato corrupto en Firestore trajera un valor no-lista,
+    // asArray evita el TypeError de new Set(no-iterable).
+    return new Set(asArray(marks[targetId]));
 }
 async function toggleBought(targetId, text) {
     if (!myIdentity) {
@@ -345,7 +356,7 @@ $("wishEditFromView").addEventListener("click", async () => {
 // quien mira, no visible para nadie más).
 function deseosList(items, emptyMsg, targetId, refresh) {
     const frag = document.createDocumentFragment();
-    const arr = items || [];
+    const arr = asArray(items).filter((x) => typeof x === "string");
     if (arr.length === 0) {
         const empty = document.createElement("li");
         empty.className = "deseos__empty";
@@ -420,6 +431,12 @@ function addWishItem() {
     const text = normalizeName($("wishInput").value);
     if (!text) { $("wishFeedback").textContent = "Escribe un regalo."; return; }
     if (editItems.length >= 20) { $("wishFeedback").textContent = "Máximo 20 deseos."; return; }
+    // Sin duplicados exactos: el estado "comprado" se indexa por texto, así que
+    // dos ítems idénticos compartirían la marca.
+    if (editItems.some((x) => x.toLowerCase() === text.toLowerCase())) {
+        $("wishFeedback").textContent = "Ese deseo ya está en tu lista.";
+        return;
+    }
     editItems.push(text);
     $("wishInput").value = "";
     $("wishFeedback").textContent = "";
@@ -449,6 +466,14 @@ $("closeRevealBtn").addEventListener("click", () => {
 $("tryAnotherBtn").addEventListener("click", () => goToGame(""));
 $("reloadBtn").addEventListener("click", () => location.reload());
 $("changeCodeLink").addEventListener("click", (e) => { e.preventDefault(); goToGame(""); });
+// "No soy yo / cambiar": olvida la identidad en memoria (para pasar el
+// dispositivo a otra persona) sin recargar. La próxima acción pedirá el PIN.
+$("identityChange").addEventListener("click", (e) => {
+    e.preventDefault();
+    setIdentity(null);
+    if ($("wishViewModal").classList.contains("is-open")) renderWishViewContents();
+    if (currentView === "reveal") renderReveal(); else renderWishlists();
+});
 
 function runSuspense() {
     return new Promise((resolve) => {

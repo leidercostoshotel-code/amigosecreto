@@ -71,10 +71,10 @@ Esto sube las reglas de seguridad y publica el sitio. Verás una URL tipo
 
 > ⚠️ Si administras las reglas **a mano desde la consola** (Firestore → Reglas),
 > recuerda **volver a publicar** el contenido de `firestore.rules` cada vez que
-> cambie. Esta versión agrega permisos para marcar regalos como "comprados"
-> (campo `boughtMarks`) y para los mensajes anónimos (campo `notesForMe`,
-> limitado a 20 y de solo-crecimiento): sin republicar, esas dos funciones no
-> se guardan.
+> cambie. Las reglas de `boughtMarks` (debe ser un *map*) y `notesForMe` (debe
+> ser una *list*, de solo-crecimiento, tope de 20) ahora validan el tipo para
+> que nadie pueda corromper el documento de otro jugador: sin republicar, esas
+> funciones no se guardan y no tienes esa protección.
 
 > ¿Solo quieres probar local? `firebase serve` o cualquier servidor estático
 > (`python3 -m http.server`). **No** abras los archivos con `file://`: los
