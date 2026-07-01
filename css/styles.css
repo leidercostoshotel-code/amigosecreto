@@ -297,7 +297,9 @@ body {
 .confetti-piece { position: fixed; top: -16px; width: 9px; height: 14px; z-index: 1250; pointer-events: none; border-radius: 2px; animation: confetti-fall linear forwards; }
 @keyframes confetti-fall { to { transform: translateY(105dvh) rotate(720deg); opacity: 0.9; } }
 
-.footnote { text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 0 20px 22px; }
+.identity-bar { text-align: center; color: var(--text-soft); font-size: 0.82rem; padding: 12px 20px 0; }
+.identity-bar strong { color: var(--text); }
+.footnote { text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 8px 20px 22px; }
 .footnote a { color: var(--text-soft); }
 
 .divider { height: 1px; background: var(--surface-line); margin: 26px 0; border: 0; }
