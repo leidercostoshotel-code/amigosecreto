@@ -1,12 +1,56 @@
 // admin.js — Panel del organizador: integrantes, sorteo (con historial y sin repetir) e historial.
 import { isConfigured, loadFirebase } from "./firebase-config.js";
 import {
-    initials, colorFor, validateName, normalizeName,
+    avatarSvg, validateName, normalizeName,
     assignWithExclusions, buildCycleExcluding, makeGameCode
 } from "./core.js";
 import qrcodeGen from "./qrcode-gen.js";
 
 const $ = (id) => document.getElementById(id);
+
+// Pinta el avatar de una persona: su foto (si dejó enlace) o un avatar
+// ilustrado según su género (o el neutro). El nombre solo alimenta el hash.
+function paintAvatar(el, person) {
+    el.textContent = "";
+    el.style.backgroundColor = "";
+    const photo = person && typeof person.photo === "string" ? person.photo.trim() : "";
+    if (/^https?:\/\//i.test(photo)) {
+        const img = document.createElement("img");
+        img.alt = ""; img.decoding = "async"; img.loading = "lazy";
+        img.addEventListener("error", () => { el.innerHTML = avatarSvg(person.name, person.gender); });
+        img.src = photo;
+        el.appendChild(img);
+    } else {
+        el.innerHTML = avatarSvg(person ? person.name : "", person ? person.gender : "");
+    }
+}
+function normalizePhoto(raw) {
+    const s = String(raw == null ? "" : raw).trim();
+    if (!s) return "";
+    if (!/^https?:\/\//i.test(s)) return null; // enlace inválido
+    return s.slice(0, 500);
+}
+
+// --- Control segmentado de género (♀ / ♂ / sin especificar) ---
+function segValue(container) {
+    const active = container.querySelector(".seg__opt.is-active");
+    return active ? (active.dataset.g || "") : "";
+}
+function segSet(container, g) {
+    const want = g || "";
+    container.querySelectorAll(".seg__opt").forEach((b) =>
+        b.classList.toggle("is-active", (b.dataset.g || "") === want));
+}
+function wireSeg(container, onChange) {
+    container.addEventListener("click", (e) => {
+        const opt = e.target.closest(".seg__opt");
+        if (!opt) return;
+        segSet(container, opt.dataset.g || "");
+        if (onChange) onChange(segValue(container));
+    });
+}
+function openOverlay(id) { $(id).classList.add("is-open"); $(id).setAttribute("aria-hidden", "false"); }
+function closeOverlay(id) { $(id).classList.remove("is-open"); $(id).setAttribute("aria-hidden", "true"); }
 
 function showScreen(id) {
     document.querySelectorAll(".screen").forEach((el) => el.classList.remove("is-active"));
@@ -116,7 +160,18 @@ function setView(name) {
 // ============================ Roster (integrantes) ============================
 function peopleNames() { return people.map((p) => p.name); }
 function personByName(name) { const l = name.toLowerCase(); return people.find((p) => p.name.toLowerCase() === l); }
+function personById(id) { return people.find((p) => p.id === id); }
 function peopleColl() { return fb.fsMod.collection(fb.db, "admins", uid, "people"); }
+// Género/foto "frescos" de un participante: prioriza el integrante guardado
+// (fuente de verdad, se actualiza en vivo) y cae al valor guardado en el sorteo.
+function metaFor(part) {
+    const r = personById(part.id);
+    return {
+        name: part.name,
+        gender: (r && r.gender) || part.gender || "",
+        photo: (r && r.photo) || part.photo || ""
+    };
+}
 
 function onPeopleUpdate() {
     populateDatalist();
@@ -129,20 +184,38 @@ function populateDatalist() {
     people.forEach((p) => { const o = document.createElement("option"); o.value = p.name; dl.appendChild(o); });
 }
 
-async function createPerson(name) {
+async function createPerson(name, gender, photo) {
     const id = fb.fsMod.doc(peopleColl()).id;
     await fb.fsMod.setDoc(fb.fsMod.doc(fb.db, "admins", uid, "people", id),
-        { name, nameLower: name.toLowerCase(), createdAt: fb.fsMod.serverTimestamp() });
-    return { id, name };
+        { name, nameLower: name.toLowerCase(), gender: gender || "", photo: photo || "", createdAt: fb.fsMod.serverTimestamp() });
+    return { id, name, gender: gender || "", photo: photo || "" };
 }
+
+// Vista previa en vivo del avatar mientras se agrega un integrante.
+function updatePersonPreview() {
+    paintAvatar($("personPreview"), {
+        name: $("personInput").value || "?",
+        gender: segValue($("personGender")),
+        photo: $("personPhoto").value
+    });
+}
+wireSeg($("personGender"), updatePersonPreview);
+$("personInput").addEventListener("input", updatePersonPreview);
+$("personPhoto").addEventListener("input", updatePersonPreview);
+$("personPhoto").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addPerson(); } });
+updatePersonPreview();
 
 $("personAddBtn").addEventListener("click", addPerson);
 $("personInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addPerson(); } });
 async function addPerson() {
     const res = validateName($("personInput").value, peopleNames());
     if (!res.ok) { flash($("personFeedback"), res.error); return; }
-    $("personInput").value = ""; $("personInput").focus();
-    try { await createPerson(res.name); }
+    const photo = normalizePhoto($("personPhoto").value);
+    if (photo === null) { flash($("personFeedback"), "El enlace de la foto debe empezar con http:// o https://"); return; }
+    const gender = segValue($("personGender"));
+    $("personInput").value = ""; $("personPhoto").value = "";
+    segSet($("personGender"), ""); updatePersonPreview(); $("personInput").focus();
+    try { await createPerson(res.name, gender, photo); }
     catch (err) { console.error(err); flash($("personFeedback"), "No se pudo guardar."); }
 }
 
@@ -162,8 +235,7 @@ function renderPeople() {
         li.className = "participant";
         const avatar = document.createElement("span");
         avatar.className = "participant__avatar";
-        avatar.style.backgroundColor = colorFor(p.name);
-        avatar.textContent = initials(p.name);
+        paintAvatar(avatar, p);
         avatar.setAttribute("aria-hidden", "true");
         const span = document.createElement("span");
         span.className = "participant__name";
@@ -174,7 +246,7 @@ function renderPeople() {
         edit.title = "Editar " + p.name;
         edit.setAttribute("aria-label", "Editar " + p.name);
         edit.textContent = "✏️";
-        edit.addEventListener("click", () => editPerson(p));
+        edit.addEventListener("click", () => openPersonEditor(p));
         const del = document.createElement("button");
         del.className = "participant__remove";
         del.type = "button";
@@ -186,18 +258,55 @@ function renderPeople() {
         list.appendChild(li);
     });
 }
-async function editPerson(p) {
-    const input = prompt("Nuevo nombre para «" + p.name + "»:", p.name);
-    if (input == null) return;
-    const name = normalizeName(input);
-    if (!name) return;
-    if (people.some((o) => o.id !== p.id && o.name.toLowerCase() === name.toLowerCase())) {
-        alert("Ya tienes otro integrante con ese nombre."); return;
-    }
-    try { await fb.fsMod.updateDoc(fb.fsMod.doc(fb.db, "admins", uid, "people", p.id),
-        { name, nameLower: name.toLowerCase() }); }
-    catch (err) { console.error(err); }
+// --- Editor de integrante (nombre + género + foto, con vista previa) ---
+let editingPersonId = null;
+function openPersonEditor(p) {
+    editingPersonId = p.id;
+    $("peName").value = p.name;
+    $("pePhoto").value = p.photo || "";
+    segSet($("peGender"), p.gender || "");
+    $("peFeedback").textContent = "";
+    updatePeAvatar();
+    openOverlay("personEditModal");
+    setTimeout(() => $("peName").focus(), 50);
 }
+function updatePeAvatar() {
+    paintAvatar($("peAvatar"), {
+        name: $("peName").value || "?",
+        gender: segValue($("peGender")),
+        photo: $("pePhoto").value
+    });
+}
+wireSeg($("peGender"), updatePeAvatar);
+$("peName").addEventListener("input", updatePeAvatar);
+$("pePhoto").addEventListener("input", updatePeAvatar);
+$("peCancelBtn").addEventListener("click", () => closeOverlay("personEditModal"));
+$("personEditModal").addEventListener("click", (e) => { if (e.target === $("personEditModal")) closeOverlay("personEditModal"); });
+$("peSaveBtn").addEventListener("click", async () => {
+    if (!editingPersonId) return;
+    const name = normalizeName($("peName").value);
+    if (!name) { flash($("peFeedback"), "Escribe un nombre."); return; }
+    if (people.some((o) => o.id !== editingPersonId && o.name.toLowerCase() === name.toLowerCase())) {
+        flash($("peFeedback"), "Ya tienes otro integrante con ese nombre."); return;
+    }
+    const photo = normalizePhoto($("pePhoto").value);
+    if (photo === null) { flash($("peFeedback"), "El enlace de la foto debe empezar con http:// o https://"); return; }
+    const gender = segValue($("peGender"));
+    try {
+        await fb.fsMod.updateDoc(fb.fsMod.doc(fb.db, "admins", uid, "people", editingPersonId),
+            { name, nameLower: name.toLowerCase(), gender, photo });
+        closeOverlay("personEditModal");
+    } catch (err) { console.error(err); flash($("peFeedback"), "No se pudo guardar."); }
+});
+$("peDeleteBtn").addEventListener("click", async () => {
+    const p = personById(editingPersonId);
+    if (!p) { closeOverlay("personEditModal"); return; }
+    if (!confirm("¿Eliminar a " + p.name + " de tus integrantes? (No afecta a los sorteos ya guardados.)")) return;
+    try {
+        await fb.fsMod.deleteDoc(fb.fsMod.doc(fb.db, "admins", uid, "people", p.id));
+        closeOverlay("personEditModal");
+    } catch (err) { console.error(err); }
+});
 async function deletePerson(p) {
     if (!confirm("¿Eliminar a " + p.name + " de tus integrantes? (No afecta a los sorteos ya guardados.)")) return;
     try { await fb.fsMod.deleteDoc(fb.fsMod.doc(fb.db, "admins", uid, "people", p.id)); }
@@ -276,8 +385,7 @@ function renderSetup() {
             li.className = "participant";
             const avatar = document.createElement("span");
             avatar.className = "participant__avatar";
-            avatar.style.backgroundColor = colorFor(p.name);
-            avatar.textContent = initials(p.name);
+            paintAvatar(avatar, metaFor(p));
             avatar.setAttribute("aria-hidden", "true");
             const span = document.createElement("span");
             span.className = "participant__name";
@@ -306,7 +414,7 @@ async function addParticipant() {
     try {
         if (!person) person = await createPerson(res.name);
         if (parts.some((p) => p.id === person.id)) return;
-        parts.push({ id: person.id, name: person.name });
+        parts.push({ id: person.id, name: person.name, gender: person.gender || "", photo: person.photo || "" });
         await fb.fsMod.updateDoc(gameRef(), { participants: parts, updatedAt: fb.fsMod.serverTimestamp() });
     } catch (err) { console.error(err); flash($("nameFeedback"), "No se pudo guardar."); }
 }
@@ -369,6 +477,10 @@ async function draw() {
         const existingIds = new Set();
         existing.forEach((d) => existingIds.add(d.id));
 
+        // Género/foto frescos por persona, para dibujar avatares en la vista del jugador.
+        const metaById = {};
+        (game.participants || []).forEach((p) => { const m = metaFor(p); metaById[p.id] = { gender: m.gender, photo: m.photo }; });
+
         const batch = fsMod.writeBatch(fb.db);
         const nextIds = new Set(assignments.map((a) => a.giverId));
         // Borra solo a quienes ya no participan (evita quedar huérfanos).
@@ -376,11 +488,12 @@ async function draw() {
 
         assignments.forEach((a, i) => {
             const ref = fsMod.doc(fb.db, "games", currentGameId, "players", a.giverId);
+            const meta = metaById[a.giverId] || {};
             const core = {
                 personId: a.giverId, name: a.giver,
                 receiverId: a.receiverId, receiver: a.receiver,
                 order: i, pinHash: null, pinSalt: null, revealed: false,
-                notesForMe: []
+                notesForMe: [], gender: meta.gender || "", photo: meta.photo || ""
             };
             if (existingIds.has(a.giverId)) {
                 // ACTUALIZA sin tocar wishlist/boughtMarks: así se conservan
@@ -457,6 +570,54 @@ $("qrDownloadBtn").addEventListener("click", () => {
     a.click();
 });
 
+// --- Cartel imprimible: QR grande (SVG vectorial, nítido) + código + pasos ---
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function printCard() {
+    const url = playerUrl();
+    const qr = qrcodeGen(0, "M");
+    qr.addData(url);
+    qr.make();
+    const qrSvg = qr.createSvgTag({ cellSize: 8, margin: 0, scalable: true });
+    const title = (game && game.title) || "Amigo Secreto";
+    const html = '<!doctype html><html lang="es"><head><meta charset="utf-8">'
+        + '<title>' + escapeHtml(title) + ' · Escanéame</title><style>'
+        + '*{box-sizing:border-box;margin:0;padding:0}'
+        + 'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#11202b;padding:28px}'
+        + '.card{max-width:640px;margin:0 auto;text-align:center;border:3px solid #0c4a6e;border-radius:24px;padding:36px 28px;background:#fff}'
+        + '.badge{display:inline-block;background:#0c4a6e;color:#fff;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px;padding:7px 16px;border-radius:999px}'
+        + 'h1{font-size:34px;margin:16px 0 4px;color:#0c4a6e}'
+        + '.tag{font-size:19px;color:#0284c7;font-weight:700;margin-bottom:18px}'
+        + '.qr{width:320px;height:320px;margin:8px auto 14px}.qr svg{width:100%;height:100%}'
+        + '.code{font-size:30px;font-weight:800;letter-spacing:.22em;color:#0c4a6e;margin:6px 0}'
+        + '.code small{display:block;font-size:13px;font-weight:600;letter-spacing:.04em;color:#7d8b97;margin-bottom:4px}'
+        + '.url{font-size:13px;color:#4a5b68;word-break:break-all;margin:8px 0 18px}'
+        + 'ol{max-width:420px;margin:0 auto;text-align:left;font-size:15px;color:#11202b;line-height:1.7;padding-left:22px}'
+        + '.foot{margin-top:18px;font-size:12px;color:#7d8b97}'
+        + '@media print{body{padding:0}.card{border-color:#0c4a6e}}'
+        + '</style></head><body><div class="card">'
+        + '<span class="badge">🎁 Amigo Secreto</span>'
+        + '<h1>' + escapeHtml(title) + '</h1>'
+        + '<div class="tag">📷 ¡Escanéame para tu amigo secreto!</div>'
+        + '<div class="qr">' + qrSvg + '</div>'
+        + '<div class="code"><small>o entra con el código</small>' + escapeHtml(currentGameId) + '</div>'
+        + '<div class="url">' + escapeHtml(url) + '</div>'
+        + '<ol><li>Escanea el QR con la cámara de tu celular (o abre el enlace).</li>'
+        + '<li>Toca <b>tu nombre</b> y crea un <b>PIN</b> de 4 dígitos.</li>'
+        + '<li>Descubre a quién le regalas… ¡y no le cuentes a nadie! 🤫</li></ol>'
+        + '<div class="foot">Cada persona ve solo su resultado, protegido con su PIN.</div>'
+        + '</div><script>window.onload=function(){setTimeout(function(){window.print()},250)}<\/script>'
+        + '</body></html>';
+    const w = window.open("", "_blank");
+    if (!w) { alert("Tu navegador bloqueó la ventana. Permite las ventanas emergentes e inténtalo de nuevo."); return; }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+}
+$("printCardBtn").addEventListener("click", printCard);
+
 function renderDrawn() {
     showScreen("stateDrawn");
     $("shareCode").textContent = currentGameId;
@@ -501,6 +662,10 @@ function renderAssignments() {
     players.forEach((p) => {
         const row = document.createElement("div");
         row.className = "assignment";
+        const avatar = document.createElement("span");
+        avatar.className = "assignment__avatar";
+        paintAvatar(avatar, p);
+        avatar.setAttribute("aria-hidden", "true");
         const from = document.createElement("span");
         from.className = "assignment__from";
         from.textContent = p.name;
@@ -515,13 +680,13 @@ function renderAssignments() {
         meta.className = "participant__meta";
         meta.style.flex = "none";
         meta.textContent = p.revealed ? "✓ visto" : (p.pinHash ? "🔒" : "·");
-        row.append(from, arrow, to, meta);
+        row.append(avatar, from, arrow, to, meta);
         if (p.pinHash || p.revealed) {
             const reset = document.createElement("button");
             reset.className = "participant__remove";
             reset.type = "button";
-            reset.title = "Restablecer PIN de " + p.name;
-            reset.setAttribute("aria-label", "Restablecer PIN de " + p.name);
+            reset.title = "Dar acceso de nuevo a " + p.name + " (borra su PIN y desbloquea su dispositivo)";
+            reset.setAttribute("aria-label", "Dar acceso de nuevo a " + p.name);
             reset.textContent = "↺";
             reset.addEventListener("click", () => resetPin(p));
             row.appendChild(reset);
@@ -535,7 +700,7 @@ $("peekBtn").addEventListener("click", () => {
     renderAssignments();
 });
 async function resetPin(p) {
-    if (!confirm("¿Restablecer el PIN de " + p.name + "? Podrá volver a entrar y crear uno nuevo.")) return;
+    if (!confirm("¿Dar acceso de nuevo a " + p.name + "? Se borra su PIN y se desbloquea su dispositivo; podrá volver a entrar y crear uno nuevo.")) return;
     try {
         await fb.fsMod.updateDoc(fb.fsMod.doc(fb.db, "games", currentGameId, "players", p.id),
             { pinHash: null, pinSalt: null, revealed: false });

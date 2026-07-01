@@ -224,10 +224,66 @@ export function initials(name) {
 }
 
 export function colorFor(name) {
+    return AVATAR_COLORS[hashInt(name) % AVATAR_COLORS.length];
+}
+
+// --- Avatares ilustrados por género (SVG generado, sin dependencias) ---
+// Se dibuja una carita amable con el pelo y el tono del fondo según el género
+// (femenino / masculino / sin especificar) y con el tono de piel y de pelo
+// derivados del nombre (determinista, para que cada persona se vea distinta).
+// El nombre NUNCA se inserta como texto en el SVG: solo alimenta el hash, así
+// que no hay riesgo de inyección al usar innerHTML con el resultado.
+function hashInt(s) {
     let h = 0;
-    const s = String(name);
-    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-    return AVATAR_COLORS[h % AVATAR_COLORS.length];
+    const str = String(s == null ? "" : s);
+    for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+    return h;
+}
+
+const SKIN_TONES = ["#ffd9b3", "#f3c088", "#e0a56b", "#c68642", "#8d5524"];
+const HAIR_TONES = ["#2c2320", "#4a2f27", "#6b4324", "#a5673f", "#caa03f", "#9aa0a6", "#e6ded0"];
+
+// Normaliza el género a 'F' | 'M' | 'N' (neutro / sin especificar).
+export function genderBucket(g) {
+    const s = String(g == null ? "" : g).trim().toUpperCase();
+    if (s === "F" || s === "FEMENINO" || s === "MUJER") return "F";
+    if (s === "M" || s === "MASCULINO" || s === "HOMBRE") return "M";
+    return "N";
+}
+
+export function avatarSvg(name, gender) {
+    const h = hashInt(name);
+    const g = genderBucket(gender);
+    const skin = SKIN_TONES[h % SKIN_TONES.length];
+    const hair = HAIR_TONES[Math.floor(h / 7) % HAIR_TONES.length];
+    const bg = g === "F" ? ["#fca5c7", "#ec4899"]
+        : g === "M" ? ["#7dd3fc", "#0284c7"]
+            : ["#5eead4", "#0d9488"];
+    const gid = "ag" + g + h.toString(36); // id único por avatar (evita choques entre gradientes)
+    const ears = g === "F" ? "" :
+        '<circle cx="30" cy="49" r="4.5" fill="' + skin + '"/><circle cx="70" cy="49" r="4.5" fill="' + skin + '"/>';
+    // Pelo largo (solo femenino): va detrás de la cara y baja por los lados.
+    const backHair = g === "F"
+        ? '<path d="M24 52 C20 30 32 17 50 17 C68 17 80 30 76 52 L76 80 C76 70 71 63 69 61 C73 41 65 31 50 31 C35 31 27 41 31 61 C29 63 24 70 24 80 Z" fill="' + hair + '"/>'
+        : "";
+    // Flequillo / gorro de pelo por encima de la frente.
+    const topHair = g === "F"
+        ? '<path d="M30 47 C29 27 71 27 70 47 C64 36 58 33 50 33 C42 33 36 36 30 47 Z" fill="' + hair + '"/>'
+        : g === "M"
+            ? '<path d="M28 47 C28 24 72 24 72 47 C72 41 65 34 50 34 C35 34 28 41 28 47 Z" fill="' + hair + '"/>'
+            : '<path d="M29 47 C29 25 71 25 71 47 C71 40 64 35 50 35 C36 35 29 40 29 47 Z" fill="' + hair + '"/>';
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" role="img">'
+        + '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">'
+        + '<stop offset="0" stop-color="' + bg[0] + '"/><stop offset="1" stop-color="' + bg[1] + '"/>'
+        + '</linearGradient></defs>'
+        + '<rect width="100" height="100" fill="url(#' + gid + ')"/>'
+        + backHair
+        + '<circle cx="50" cy="48" r="21" fill="' + skin + '"/>'
+        + ears
+        + topHair
+        + '<circle cx="42" cy="49" r="2.4" fill="#3b2a1e"/><circle cx="58" cy="49" r="2.4" fill="#3b2a1e"/>'
+        + '<path d="M43 57 Q50 63 57 57" stroke="#3b2a1e" stroke-width="2.4" fill="none" stroke-linecap="round"/>'
+        + '</svg>';
 }
 
 export function randomPhrase() {

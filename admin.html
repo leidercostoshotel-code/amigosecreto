@@ -103,7 +103,10 @@
                         <p class="hint" id="copyHint" style="margin-top:8px;">Cada persona abre el enlace, toca su nombre y crea su PIN.</p>
                         <div class="qr-wrap">
                             <canvas id="qrCanvas" width="220" height="220" aria-label="Código QR para unirse al sorteo"></canvas>
-                            <button class="btn btn--ghost" id="qrDownloadBtn" type="button">⬇️ Descargar QR</button>
+                            <div class="qr-actions">
+                                <button class="btn btn--ghost" id="qrDownloadBtn" type="button">⬇️ Descargar QR</button>
+                                <button class="btn btn--accent" id="printCardBtn" type="button">🖨️ Cartel para imprimir</button>
+                            </div>
                         </div>
                     </div>
 
@@ -129,11 +132,24 @@
             <!-- ===================== VISTA: INTEGRANTES ===================== -->
             <div class="view" id="viewPeople" hidden>
                 <h2 class="section-title">Tus integrantes</h2>
-                <p class="hint" style="margin:0 0 14px;">Guarda aquí a las personas. Aparecerán como sugerencias al armar un sorteo.</p>
-                <label class="field-label" for="personInput">Nombre</label>
-                <div class="add-row">
-                    <input class="input" type="text" id="personInput" maxlength="40" autocomplete="off" placeholder="Ej. María González">
-                    <button class="btn btn--primary" id="personAddBtn" type="button">+ Agregar</button>
+                <p class="hint" style="margin:0 0 14px;">Guarda aquí a las personas con su género y (si quieres) su foto: cada una tendrá su propio avatar.</p>
+                <div class="person-form">
+                    <div class="avatar-preview person-form__preview" id="personPreview" aria-hidden="true"></div>
+                    <div class="person-form__fields">
+                        <label class="field-label" for="personInput">Nombre</label>
+                        <input class="input" type="text" id="personInput" maxlength="40" autocomplete="off" placeholder="Ej. María González">
+                        <label class="field-label" style="margin-top:12px;">Género <span style="font-weight:400;color:var(--text-muted);">(para su avatar)</span></label>
+                        <div class="seg" id="personGender" role="group" aria-label="Género">
+                            <button type="button" class="seg__opt is-active" data-g="">🙂 Sin especificar</button>
+                            <button type="button" class="seg__opt" data-g="F">👩 Femenino</button>
+                            <button type="button" class="seg__opt" data-g="M">👨 Masculino</button>
+                        </div>
+                        <label class="field-label" for="personPhoto" style="margin-top:12px;">Foto (opcional)</label>
+                        <input class="input" type="url" id="personPhoto" inputmode="url" autocomplete="off" placeholder="https://…/foto.jpg">
+                    </div>
+                </div>
+                <div class="actions" style="margin-top:14px;">
+                    <button class="btn btn--primary btn--block" id="personAddBtn" type="button">+ Agregar integrante</button>
                 </div>
                 <p class="feedback" id="personFeedback" role="alert" aria-live="assertive"></p>
 
@@ -183,6 +199,32 @@
 
         <p class="footnote"><a href="index.html">Ir a la vista de jugador →</a></p>
     </main>
+
+    <!-- Modal: editar integrante (nombre + género + foto) -->
+    <div class="overlay modal" id="personEditModal" role="dialog" aria-modal="true" aria-labelledby="peTitle" aria-hidden="true">
+        <div class="modal__card">
+            <h2 class="modal__title" id="peTitle">Editar integrante</h2>
+            <div class="avatar-preview" style="justify-content:center;margin-bottom:16px;">
+                <div class="avatar-preview__img" id="peAvatar" aria-hidden="true"></div>
+            </div>
+            <label class="field-label" for="peName">Nombre</label>
+            <input class="input" type="text" id="peName" maxlength="40" autocomplete="off">
+            <label class="field-label" style="margin-top:12px;">Género</label>
+            <div class="seg" id="peGender" role="group" aria-label="Género">
+                <button type="button" class="seg__opt is-active" data-g="">🙂 Sin especificar</button>
+                <button type="button" class="seg__opt" data-g="F">👩 Femenino</button>
+                <button type="button" class="seg__opt" data-g="M">👨 Masculino</button>
+            </div>
+            <label class="field-label" for="pePhoto" style="margin-top:12px;">Foto (opcional)</label>
+            <input class="input" type="url" id="pePhoto" inputmode="url" autocomplete="off" placeholder="https://…/foto.jpg">
+            <p class="feedback" id="peFeedback" role="alert" aria-live="assertive"></p>
+            <div class="actions" style="margin-top:8px;">
+                <button class="btn btn--accent btn--block" id="peSaveBtn" type="button">Guardar cambios</button>
+                <button class="btn btn--danger btn--block" id="peDeleteBtn" type="button">Eliminar integrante</button>
+                <button class="btn btn--ghost btn--block" id="peCancelBtn" type="button">Cancelar</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal: ver asignaciones de un sorteo del historial -->
     <div class="overlay modal" id="histModal" role="dialog" aria-modal="true" aria-labelledby="histModalTitle" aria-hidden="true">
